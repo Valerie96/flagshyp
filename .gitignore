@@ -28,4 +28,7 @@ results.dat
 */*/abaqus/*.stt
 */*/*/abaqus.rpy
 */*/*/abaqus.rpy.*
+LE.txt
+AVD_Check.txt
+DefGrad.txt
 
