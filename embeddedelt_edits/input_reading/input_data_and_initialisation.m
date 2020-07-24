@@ -36,6 +36,14 @@ if( ~ PRO.rest )
     [GEOM,LOAD,GLOBAL,PLAST,KINEMATICS] = ...
      initialisation(FEM,GEOM,QUADRATURE,MAT,LOAD,CONSTANT,CON,GLOBAL);                                           
     %----------------------------------------------------------------------
+    % |-/
+    % Identify host element/embedded node pairs and find natural
+    % coordinates of embedded nodes, if there are embedded elements
+    if ~isempty(FEM.mesh.embedded)
+        GEOM = nodes_in_host(GEOM,FEM,BC.tienodes);
+    end
+    %|-/
+    %----------------------------------------------------------------------
     % Save into restart file.
     %----------------------------------------------------------------------
     cd(PRO.job_folder);

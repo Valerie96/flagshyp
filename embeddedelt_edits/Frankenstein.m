@@ -2,7 +2,8 @@
 %out what all of the variables are. This may be a disaster
 clear;clc; close all;
 inputfile='explicit_embedded3D.dat';
-inputfile='explicit_embedded_4el.dat';
+inputfile='cylinder_embedded3D.dat';
+% inputfile='explicit_embedded_4el.dat';
 basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
 ansmlv='y';
 global explicit ;
@@ -206,11 +207,8 @@ while(Time<=tMax)
   % excluding pressure contributions.
   %--------------------------------------------------------------------
   if  BC.n_prescribed_displacements > 0
-%       GEOM.x = update_prescribed_displacements_explicit(BC.dofprescribed,...
-%                GEOM.x0,GEOM.x,CON.xlamb,BC.presc_displacement,t_n,tMax); 
-       GEOM.x = update_prescribed_displacements_explicit(BC.dofprescribed,...
-                BC.tiedof, BC.tienodes,FEM.mesh.element_type,GEOM.ndime, ...
-                FEM.mesh,GEOM.x0,GEOM.x,CON.xlamb,BC.presc_displacement,t_n,tMax);   
+      GEOM.x = update_prescribed_displacements_explicit(BC.dofprescribed,...
+               GEOM.x0,GEOM.x,CON.xlamb,BC.presc_displacement,t_n,tMax);   
 %      |-/
 %      Update coodinates of embedded nodes (if there are any)  
           if ~isempty(FEM.mesh.embedded)

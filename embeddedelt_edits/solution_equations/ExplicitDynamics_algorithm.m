@@ -10,8 +10,8 @@ CON.xlamb = 0;
 CON.incrm = 0; 
 
 %step 2 - getForce
-[GLOBAL,updated_PLAST] = getForce_explicit(CON.xlamb,...
-          GEOM,MAT,FEM,GLOBAL,CONSTANT,QUADRATURE,PLAST,KINEMATICS,BC);
+[GLOBAL,updated_PLAST,GEOM.Jn_1] = getForce_explicit(CON.xlamb,...
+          GEOM,MAT,FEM,GLOBAL,CONSTANT,QUADRATURE,PLAST,KINEMATICS,BC,1);
 
 %step 3 - compute accelerations.
 GLOBAL.accelerations = inv(GLOBAL.M)*(GLOBAL.external_load - GLOBAL.T_int);
@@ -45,7 +45,13 @@ while(Time<=tMax)
     disp_prev = disp_n;
     % update nodal displacements 
     disp_n = disp_n + dt_nphalf *velocities_half;
-    
+%----------------------------------------------------------------
+    % Update coodinates.
+    displ = disp_n-disp_prev; 
+    GEOM.x = update_geometry(GEOM.x,1,displ(BC.freedof),BC.freedof);
+
+%----------------------------------------------------------------
+ 
     % step 6 - enforce displacement BCs
     
 %   %--------------------------------------------------------------------
@@ -72,6 +78,12 @@ while(Time<=tMax)
   if  BC.n_prescribed_displacements > 0
       GEOM.x = update_prescribed_displacements_explicit(BC.dofprescribed,...
                GEOM.x0,GEOM.x,CON.xlamb,BC.presc_displacement,t_n,tMax);                                                       
+%      |-/
+%      Update coodinates of embedded nodes (if there are any)  
+          if ~isempty(FEM.mesh.embedded)
+              GEOM.x = update_embedded_displacements_explicit(BC.tiedof, BC.tienodes,...
+                    FEM.mesh,GEOM); 
+          end
 %       [GLOBAL,updated_PLAST] = residual_and_stiffness_assembly(CON.xlamb,...
 %        GEOM,MAT,FEM,GLOBAL,CONSTANT,QUADRATURE.element,PLAST,KINEMATICS);
       %----------------------------------------------------------------
@@ -88,8 +100,8 @@ while(Time<=tMax)
   fe_prev = GLOBAL.external_load;
   
   %step 8 - getForce
-  [GLOBAL,updated_PLAST] = getForce_explicit(CON.xlamb,...
-          GEOM,MAT,FEM,GLOBAL,CONSTANT,QUADRATURE,PLAST,KINEMATICS,BC);
+  [GLOBAL,updated_PLAST,GEOM.Jn_1] = getForce_explicit(CON.xlamb,...
+          GEOM,MAT,FEM,GLOBAL,CONSTANT,QUADRATURE,PLAST,KINEMATICS,BC,dt);
   
   % updated stable time increment based on current deformation     
   dt = prefactor * CalculateTimeStep(PRO,FEM,GEOM,CON,BC,GLOBAL,MAT);
@@ -104,7 +116,22 @@ while(Time<=tMax)
   [energy_value, max_energy] = check_energy_explicit(PRO,FEM,CON,BC,GLOBAL,disp_n, disp_prev,GLOBAL.T_int,fi_prev,GLOBAL.external_load,fe_prev,t_n);
   
 
+%Plot every 4 steps
+  if( mod(time_step_counter,4) == 0 )
+      plot_counter = plot_counter +1;
+      PLAST = save_output(updated_PLAST,PRO,FEM,GEOM,QUADRATURE,BC,...
+                MAT,LOAD,CON,CONSTANT,GLOBAL,PLAST,KINEMATICS);  
+  end
   
+  time_step_counter = time_step_counter + 1;  
+  
+  % this is set just to get the removal of old vtu files in output.m
+  % correct
+  CON.incrm =  CON.incrm + 1;
+
+    disp(['step = ',sprintf('%d', time_step_counter-1),'     time = ',... 
+  sprintf('%.2e', t_n), ' sec.     dt = ', sprintf('%.2e', dt_old) ,...
+  ' sec.'])  
     
 end % end on while loop
 
