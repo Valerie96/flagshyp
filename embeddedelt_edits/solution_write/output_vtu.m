@@ -10,9 +10,17 @@ function output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KIN
 %--------------------------------------------------------------------------
 
 if (~PRO.rest && CON.incrm==0)
+    fprintf('yo\n');
+    if ~exist(strcat(PRO.job_folder, "VTU"), 'dir')
+        fprintf('yo\n');
+        mkdir("VTU");
+    end
+    cd VTU;
     string='w';
     system('rm out-*.vtu');
     system('rm out-*.vtk');
+else
+    cd VTU;
 end
 
 
@@ -249,6 +257,7 @@ fprintf(fid3,'</VTKFile>\n');
 
 fclose(fid3);
 
+cd ..
 % if (~isempty (CON.OUTPUT.nwant) && CON.OUTPUT.nwant~=0)
 %    fclose(fid_flagout);
 % end

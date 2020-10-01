@@ -38,6 +38,7 @@ if (explicit == 1)
     GLOBAL.velocities = zeros(FEM.mesh.n_dofs,1);
     GLOBAL.accelerations = zeros(FEM.mesh.n_dofs,1);
     GEOM.Jn_1 = ones(FEM.mesh.nelem,1);
+    GEOM.VolRate = zeros(FEM.mesh.nelem,1);
 end
 
 %--------------------------------------------------------------------------    

@@ -2,13 +2,13 @@
 % Computes the element vector of global internal forces and the tangent
 % stiffness matrix. 
 %--------------------------------------------------------------------------
-function [T_internal,counter,PLAST_element,geomJn_1] = ...
+function [T_internal,counter,PLAST_element,geomJn_1,VolRate] = ...
           InternalForce_explicit(ielement,FEM,xlocal,x0local,...
           element_connectivity,Ve,QUADRATURE,properties,CONSTANT,GEOM,...
-          matyp,PLAST,counter,KINEMATICS,MAT, dt)
+          matyp,PLAST,counter,KINEMATICS,MAT,DAMPING,dt)
       
 %define explicit as global variable in order to use it in function      
-% it is assigned value in Flagsyp.m
+% it is assigned value in Flagshyp.m
 global explicit
 dim=GEOM.ndime;
 
@@ -21,9 +21,11 @@ T_internal = zeros(FEM.mesh.n_dofs_elem,1);
 %--------------------------------------------------------------------------
 KINEMATICS = gradients(xlocal,x0local,FEM.interpolation.element.DN_chi,...
              QUADRATURE,KINEMATICS);
+
 %|-/
-geomJn_1=GEOM.Jn_1;
 Jn_1=GEOM.Jn_1(ielement);
+b1=DAMPING.b1;
+b2=DAMPING.b2;
 
 % Ffid = fopen('DefGrad.txt','a+');
 % formt = [repmat('%1.4d ',1,3) '\n'];
@@ -86,7 +88,6 @@ for igauss=1:QUADRATURE.ngauss
     %----------------------------------------------------------------------
     %|-/ 
     % Calculate bulk viscosity damping
-    b1=0.042; b2=1.2; 
     le=calc_element_size(FEM,GEOM,ielement);
     rho=properties(1); mu=properties(2); lambda=properties(3);
     J=KINEMATICS.J(igauss);
@@ -110,11 +111,32 @@ for igauss=1:QUADRATURE.ngauss
 %     T = Cauchy*kinematics_gauss.DN_x;
     T = (Cauchy+p1+p2)*kinematics_gauss.DN_x;
     T_internal = T_internal + T(:)*JW;
+    
+Ffid = fopen('J.txt','a+');
+    fprintf(Ffid,"%7.3d %7.3d\n", J, eps_dot);
 
+fclose(Ffid);
 end
 
-    %Update previous Jacobian
-    geomJn_1(ielement)=J;
+% |-/
+    %Update previous Jacobian and element strain rate
+    %Assuming that J and eps_dot are the same for all the element Gauss Pts
+    geomJn_1=J;
+    VolRate = eps_dot;
+% |-/
+    
+% Ffid = fopen('Pressure.txt','a+');
+% formt = [repmat('%1.4d ',1,3) '\n'];
+% fprintf(Ffid,"\np1:\n");
+% ti=strcat("Element", int2str(ielement));
+% fprintf(Ffid, ti);fprintf(Ffid,"\n");
+%     for j=1:3
+%     fprintf(Ffid, formt, p1(j,:));
+%     end
+%     fprintf(Ffid,"\n");
+% 
+% 
+% fclose(Ffid);
     
 %--------------------------------------------------------------------------
 % Compute conttribution (and extract relevant information for subsequent

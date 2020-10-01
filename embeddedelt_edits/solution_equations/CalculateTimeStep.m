@@ -1,28 +1,30 @@
 %--------------------------------------------------------------------------
 % Check for equilibrium convergence.
 %--------------------------------------------------------------------------
-function [dt] = CalculateTimeStep(PRO,FEM,GEOM,CON,BC,GLOBAL,MAT)
-
+function [dt] = CalculateTimeStep(PRO,FEM,GEOM,CON,BC,GLOBAL,MAT,DAMPING)
 
 dtMax = 1e20;
 % Main element loop.
 %--------------------------------------------------------------------------
 for ielement=1:FEM.mesh.nelem
-    mu =MAT.props(2);
+    mu = MAT.props(2);
     lambda = MAT.props(3);
     rho = MAT.props(1);
+    %|-/
+    b1 = DAMPING.b1;
+    b2 = DAMPING.b2;
+    eps_dot = GEOM.VolRate(ielement);
 
-    % ce calculated using dilational wave speed
-%     nu = 0.5*lambda/(lambda + mu);
-%     bulkmod = lambda + 2*mu/3;
-%     Eprop = (mu * (3*lambda +2 * mu)) / (lambda + mu);
-%     ce = sqrt(Eprop/rho);
-    
     %Longitudinal Bulk wave speed
     ce = sqrt((lambda + 2*mu)/rho);
     
     [le, max_le] = calc_element_size(FEM,GEOM,ielement);
     dt_ielt = le/ce;
+    
+    %Add effect of damping 
+    zeta = b1-(b2^2)*dt_ielt*min(0, eps_dot);
+    dt_ielt = dt_ielt*(sqrt(1+zeta^2)-zeta);
+    
     if(dt_ielt < dtMax)
         dt = dt_ielt;
         dtMax = dt;
@@ -30,6 +32,14 @@ for ielement=1:FEM.mesh.nelem
     
 end
 
+        lmax = le;
+        zmax = b1-(b2^2)*dt_ielt*min(0, eps_dot);
+        ee=min(0, eps_dot);
+
+Ffid = fopen('Damping.txt','a+');
+formt = [repmat('%1.4d ',1,3) '\n'];
+fprintf(Ffid, 'z=%d   le=%d  e=%d  dt=%d \n',zmax,lmax,ee,dt);
+fclose(Ffid);
 
 end
 

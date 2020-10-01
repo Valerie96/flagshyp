@@ -59,7 +59,7 @@ switch element_type
                    [ -((chi - 1)*(iota - 1))/8, ((chi + 1)*(iota - 1))/8, ((chi - 1)*(iota - 1))/8, -((chi + 1)*(iota - 1))/8, ((chi - 1)*(iota + 1))/8, -((chi + 1)*(iota + 1))/8, -((chi - 1)*(iota + 1))/8, ((chi + 1)*(iota + 1))/8]
                    [  -((chi - 1)*(eta - 1))/8,  ((chi + 1)*(eta - 1))/8,  ((chi - 1)*(eta + 1))/8,  -((chi + 1)*(eta + 1))/8,  ((chi - 1)*(eta - 1))/8,  -((chi + 1)*(eta - 1))/8,  -((chi - 1)*(eta + 1))/8,  ((chi + 1)*(eta + 1))/8]];
          interpolation.N = N([1 2 4 3 5 6 8 7]);
-         %interpolation.N = N;
+%          interpolation.N = N;
          interpolation.DN_chi = DN_chi(:,[1 2 4 3 5 6 8 7]);
-         %interpolation.DN_chi = DN_chi;
+%          interpolation.DN_chi = DN_chi;
 end
