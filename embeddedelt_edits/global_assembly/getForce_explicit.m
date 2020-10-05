@@ -14,7 +14,9 @@ updated_PLAST = PLAST;
 GLOBAL.external_load = xlamb*GLOBAL.nominal_external_load;
 
 Jn_1_vec=ones(FEM.mesh.nelem,1);
-VolRate_vec=zeros(FEM.mesh.nelem,1);
+VolRate_vec=zeros(FEM.mesh.nelem,QUADRATURE.element.ngauss);
+
+
 
 Step_globalT_int = zeros(size(GLOBAL.T_int,1),1);
 

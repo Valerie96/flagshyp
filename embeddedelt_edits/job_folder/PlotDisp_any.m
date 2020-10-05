@@ -1,13 +1,17 @@
-%Plot Stress
+%Plot Displacment
 % close all; clear; clc;
-
+name="longthing"
+damplev="042";
 % x0=GEOM.x0;
 % connect = FEM.mesh.connectivity;
 % nelt = size(connect,2);
 
-basedir='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/job_folder/longthing_free/';
+basedir=strcat('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/job_folder/',name);
 set(0,'defaultfigurecolor',[1 1 1]);
 file = [basedir 'AVD_Check_042.txt'];
+
+
+
 
 fid =fopen(file, 'r');
 

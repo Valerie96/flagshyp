@@ -24,6 +24,8 @@ KINEMATICS = gradients(xlocal,x0local,FEM.interpolation.element.DN_chi,...
 
 %|-/
 Jn_1=GEOM.Jn_1(ielement);
+J=KINEMATICS.J(ielement);
+eps_dot = (J-Jn_1)/dt;
 b1=DAMPING.b1;
 b2=DAMPING.b2;
 
@@ -90,13 +92,10 @@ for igauss=1:QUADRATURE.ngauss
     % Calculate bulk viscosity damping
     le=calc_element_size(FEM,GEOM,ielement);
     rho=properties(1); mu=properties(2); lambda=properties(3);
-    J=KINEMATICS.J(igauss);
-    eps_dot = (J-Jn_1)/dt;
     Cd=sqrt((lambda + 2*mu)/rho);
     
     p1 = rho*b1*le*Cd*eps_dot*CONSTANT.I;
     p2 = rho*(b2*le)^2*abs(eps_dot)*min(0,eps_dot)*CONSTANT.I;
-   
     %
     %|-/
         
@@ -112,19 +111,16 @@ for igauss=1:QUADRATURE.ngauss
     T = (Cauchy+p1+p2)*kinematics_gauss.DN_x;
     T_internal = T_internal + T(:)*JW;
     
-Ffid = fopen('J.txt','a+');
-    fprintf(Ffid,"%7.3d %7.3d\n", J, eps_dot);
-
-fclose(Ffid);
 end
 
 % |-/
     %Update previous Jacobian and element strain rate
     %Assuming that J and eps_dot are the same for all the element Gauss Pts
+    %and I have now confirmed this
     geomJn_1=J;
     VolRate = eps_dot;
 % |-/
-    
+
 % Ffid = fopen('Pressure.txt','a+');
 % formt = [repmat('%1.4d ',1,3) '\n'];
 % fprintf(Ffid,"\np1:\n");

@@ -1,9 +1,10 @@
 %Plot Stress
- clear; clc; %close all;
+%  clear; clc; %close all;
 G=76.92e9; lam=115.4e9;
 name = "cylinder";
+damplev = "04new";
 % name = "cylinder_3D_d";
-steps = 24019;
+steps = 24760;
 nplot = 20;
 n_elts = 8;
 n_nodes = 27;
@@ -17,7 +18,7 @@ n_nodes = 27;
 % name = "longthing_shortdt";
 basedir=strcat('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/job_folder/',name);
 set(0,'defaultfigurecolor',[1 1 1]);
-file = strcat(basedir,'/', name, '-OUTPUT.txt')
+file = strcat(basedir,'/', name, '-', damplev, 'OUTPUT.txt')
 
 fid =fopen(file, 'r');
 numsteps = floor(steps/nplot);
@@ -62,6 +63,7 @@ graphsize=[100 100 800 400];
 
 % stress_elt(:,:,elt) = stress_elt(1:6000,:,elt);
 
+%% One IP
 % figure();
 % hold on; grid on;
 % fig=gcf; fig.Position=graphsize;
@@ -70,29 +72,26 @@ graphsize=[100 100 800 400];
 % % ylim([-1E11 1E11]);
 % xlabel("Step Number");
 % ylabel("Stress (Pa)");
-% title("Element 8 S11 Output d1=0.042");
+% T = strcat( "Element 8 S11 Output d1=", damplev);
+% title(T);
 
-figure();
-hold on; grid on;
-fig=gcf; fig.Position=graphsize;
-for i=1:8
-plot([1:plotsteps], stress_elt(1:plotsteps,1,elt,i));
-end
-% xlim([1 740]);
-ylim([-1E6 1E6]);
-xlabel("Step Number");
-ylabel("Stress (Pa)");
-title("Element 8 S11 Output d1=0.0067  All IPs");
 
+%% All IPs
 % figure();
 % hold on; grid on;
 % fig=gcf; fig.Position=graphsize;
-% plot([1:plotsteps], stress_elt(1:plotsteps,1,elt,1));
+% for i=1:8
+% plot([1:plotsteps], stress_elt(1:plotsteps,1,elt,i));
+% end
 % % xlim([1 740]);
-% ylim([-1E5 1E5]);
+% ylim([-1E6 1E6]);
 % xlabel("Step Number");
 % ylabel("Stress (Pa)");
-% title("Element 8 S11 Output d1=0.0067");
+% T = strcat( "Element 8 S11 Output d1=", damplev ,"  All IPs");
+% title(T);
+
+
+%% Ave IPs
 
 %stress_elt [step# , stress# (11,22 etc), elt#, integration point] 
 aveIP=zeros(numsteps,6,n_elts,1);
@@ -111,51 +110,43 @@ hold on; grid on;
 fig=gcf; fig.Position=graphsize;
 plot([1:plotsteps], aveIP(1:plotsteps,1,elt,1));
 % xlim([1 740]);
-ylim([-7E4 0]);
+ylim([-1E6 1E6]);
 xlabel("Step Number");
 ylabel("Stress (Pa)");
-title("Element 8 S11 Output d1=0.0067  Average IP");
+T = strcat( "Element 8 S11 Output d1=", damplev ,"  Average IP");
+title(T);
+
+Fave = mean(aveIP(:,1,elt,1))
+FF = ones(plotsteps,1)*Fave;
+plot([1:plotsteps], FF,'r');
+
+AbqS = -1.42E4;
+AS=ones(plotsteps,1)*AbqS;
+plot([1:plotsteps], AS, 'g');
+
+
 
 figure();
 hold on; grid on;
 fig=gcf; fig.Position=graphsize;
 plot([1:plotsteps], aveIP(1:plotsteps,1,elt,1));
 % xlim([1 740]);
-% ylim([-7E4 0]);
+ylim([-7E4 7E4]);
 xlabel("Step Number");
 ylabel("Stress (Pa)");
-title("Element 8 S11 Output d1=0.0067  Average IP");
+T = strcat( "Element 8 S11 Output d1=", damplev ,"  Average IP");
+title(T);
 
 % figure();
 % hold on; grid on;
 % fig=gcf; fig.Position=graphsize;
-% plot([1:plotsteps], stress_elt(1:plotsteps,4,elt,1));
+% plot([1:5:plotsteps], aveIP(1:5:plotsteps,1,elt,1));
 % % xlim([1 740]);
-% % ylim([-1E8 1E8]);
+% ylim([-1E6 1E6]);
 % xlabel("Step Number");
 % ylabel("Stress (Pa)");
-% title("S22 Output: Flagshyp");
-% 
-% 
-% figure();
-% hold on; grid on;
-% fig=gcf; fig.Position=graphsize;
-% plot([1:plotsteps], stress_elt(1:plotsteps,6,elt,1));
-% % xlim([1 740]);
-% % ylim([-1E7 1E7]);
-% xlabel("Step Number");
-% ylabel("Stress (Pa)");
-% title("S33 Output: Flagshyp");
-% 
-% 
-% figure();
-% hold on; grid on;
-% fig=gcf; fig.Position=graphsize;
-% plot([1:plotsteps], stress_elt(1:plotsteps,5,elt,1));
-% % xlim([1 740]);
-% % ylim([-8E5 8E5]);
-% xlabel("Step Number");
-% ylabel("Stress (Pa)");
-% title("S23 Output: Flagshyp");
+% T = strcat( "Element 8 S11 Output d1=", damplev ,"  Average IP");
+% title(T);
+
 
 fclose('all');

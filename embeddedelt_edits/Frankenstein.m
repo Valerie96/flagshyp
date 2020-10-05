@@ -8,7 +8,7 @@ inputfile='cylinder.dat';
 basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
 simtime = 0.01;
 outputfreq=20;
-DAMPING.b1 = 0.01; %Linear bulk viscosity damping
+DAMPING.b1 = 0.06; %Linear bulk viscosity damping
 DAMPING.b2 = 0; %Quadratic bulk viscosity damping
 
 ansmlv='y'; 
