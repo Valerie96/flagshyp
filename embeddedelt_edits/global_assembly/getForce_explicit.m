@@ -104,20 +104,33 @@ end
 %--------------------------------------------------------------------------
 % GLOBAL.Residual = GLOBAL.T_int - GLOBAL.external_load;
 
+% |-/
 
-% equ. 6.3.3. defines the residual as f_int - f_ext, but algorithm in  
-% in box 6.1 gives f_n = f_ext - f_int ... 
-GLOBAL.Residual = GLOBAL.T_int - GLOBAL.external_load;
-GLOBAL.Reactions = GLOBAL.Residual(BC.fixdof) + GLOBAL.external_load(BC.fixdof);
+GLOBAL.external_load_effective(BC.fixdof) = GLOBAL.T_int(BC.fixdof);
+  
+% algorithm in box 6.1 gives f_n = f_ext - f_int
+GLOBAL.Residual = GLOBAL.external_load_effective - GLOBAL.T_int;
+GLOBAL.Reactions(BC.fixdof) =  GLOBAL.Residual(BC.fixdof) + GLOBAL.external_load_effective(BC.fixdof);
 
-% ffid = fopen('GlobalForce.txt','a+');
-%     fprintf(ffid,"Global Internal Force:\n"); 
-%     for i=1:3:48
-%         fprintf(ffid,formt, GLOBAL.T_int(i:i+2));
-%     end
-%     fprintf(ffid,'\n');
-%     fclose(ffid);
-%     
+
+ffid = fopen('GlobalForce.txt','a+');
+    fprintf(ffid,"Global Internal Force:\n"); 
+    for i=1:3:60
+        fprintf(ffid,formt, GLOBAL.T_int(i:i+2));
+    end
+    fprintf(ffid,'\n');
+    fprintf(ffid,"Global Reaction Force:\n"); 
+    for i=1:3:60
+        fprintf(ffid,formt, GLOBAL.Reactions(i:i+2));
+    end
+    fprintf(ffid,'\n');
+        fprintf(ffid,"Global Residual Force:\n"); 
+    for i=1:3:60
+        fprintf(ffid,formt, GLOBAL.Residual(i:i+2));
+    end
+    fclose(ffid);
+
+    
 end
 
 

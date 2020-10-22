@@ -3,12 +3,12 @@
 clear; clc; close all; 
 % inputfile='explicit_embedded3D_new.dat';
 % inputfile='explicit_embedded_4elt_new.dat';
-inputfile='cylinder.dat';
-% inputfile='longthing_shortdt.dat';
+inputfile='cylinder_embedded.dat';
+% % inputfile='longthing.dat';
 basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
 simtime = 0.01;
-outputfreq=20;
-DAMPING.b1 = 0.06; %Linear bulk viscosity damping
+outputfreq=2;
+DAMPING.b1 = 0.042; %Linear bulk viscosity damping
 DAMPING.b2 = 0; %Quadratic bulk viscosity damping
 
 ansmlv='y'; 
@@ -111,11 +111,11 @@ tic
     % |-/
     % Identify host element/embedded node pairs and find natural
     % coordinates of embedded nodes, if there are embedded elements
-    tic
     if ~isempty(FEM.mesh.embedded)
         GEOM = nodes_in_host(GEOM,FEM,BC.tienodes);
-    end
-    toc
+    end 
+    
+    GLOBAL.external_load_effective = GLOBAL.external_load;
     %|-/
     %----------------------------------------------------------------------
     % Save into restart file.
@@ -144,9 +144,9 @@ CON.incrm = 0;
 %step 2 - getForce
 [GLOBAL,updated_PLAST,GEOM.Jn_1,GEOM.VolRate] = getForce_explicit(CON.xlamb,...
           GEOM,MAT,FEM,GLOBAL,CONSTANT,QUADRATURE,PLAST,KINEMATICS,BC,DAMPING,1);      
-      
+     
 %step 3 - compute accelerations.
-GLOBAL.accelerations = inv(GLOBAL.M)*(GLOBAL.external_load - GLOBAL.T_int);
+GLOBAL.accelerations = inv(GLOBAL.M)*(GLOBAL.external_load_effective - GLOBAL.T_int);
 
 velocities_half = zeros(FEM.mesh.n_dofs,1);
 disp_n = zeros(FEM.mesh.n_dofs,1);
@@ -155,7 +155,7 @@ disp_prev = zeros(FEM.mesh.n_dofs,1);
 %step 4 - time update/iterations
 Time = 0; 
 tMax = simtime; % in seconds
-prefactor = 0.65;
+prefactor = 0.7;
 dt= prefactor * CalculateTimeStep(PRO,FEM,GEOM,CON,BC,GLOBAL,MAT,DAMPING); % in seconds
 plot_counter  = 0;
 time_step_counter = 0;
@@ -176,19 +176,21 @@ while(Time<=tMax)
     
 % step 5 - update velocities
     velocities_half = GLOBAL.velocities + (t_nphalf - t_n) * GLOBAL.accelerations;
-%     % store old displacements for energy computation
-%     disp_prev = disp_n;
-%     % update nodal displacements 
-%     disp_n = disp_n + dt_nphalf *velocities_half;
-%     
-% %----------------------------------------------------------------
-% % Update stored coodinates.
-%   
-%   displ = disp_n-disp_prev; 
-%   GEOM.x = update_geometry(GEOM.x,1,displ(BC.freedof),BC.freedof);
-%   dx = GEOM.x - GEOM.x0;
-% %----------------------------------------------------------------
+ 
+   % step 7 Update nodal displacments 
+    % store old displacements for energy computation
+    disp_prev = disp_n;
+    % update nodal displacements 
+    disp_n = disp_n + dt_nphalf *velocities_half;
     
+%----------------------------------------------------------------
+% Update stored coodinates.
+  
+  displ = disp_n-disp_prev; 
+  GEOM.x = update_geometry_explicit(GEOM.x,GEOM.x0,1,disp_n(BC.freedof),BC.freedof);
+  dx = GEOM.x - GEOM.x0;
+%----------------------------------------------------------------   
+
 % step 6 - enforce displacement BCs 
 %   %--------------------------------------------------------------------
 %   % Update nodal forces (excluding pressure) and gravity. 
@@ -212,17 +214,17 @@ while(Time<=tMax)
   % excluding pressure contributions.
   %--------------------------------------------------------------------
   if  BC.n_prescribed_displacements > 0
-      GEOM.x = update_prescribed_displacements_explicit(BC.dofprescribed,...
-               GEOM.x0,GEOM.x,CON.xlamb,BC.presc_displacement,t_n,tMax); 
-           
-       dx = GEOM.x - GEOM.x0;
+      [GEOM.x ,velocities_half]  = update_prescribed_displacements_explicit(BC.dofprescribed,...
+               GEOM.x0,GEOM.x,velocities_half,BC.presc_displacement,t_n,tMax); 
+      disp_n(BC.fixdof) = GEOM.x(BC.fixdof) - GEOM.x0(BC.fixdof);  
 %      |-/
 %      Update coodinates of embedded nodes (if there are any)  
           if ~isempty(FEM.mesh.embedded)
               GEOM.x = update_embedded_displacements_explicit(BC.tiedof, BC.tienodes,...
                     FEM.mesh,GEOM); 
           end
-          dx = GEOM.x - GEOM.x0;
+
+         dx = GEOM.x - GEOM.x0;
 %       [GLOBAL,updated_PLAST] = residual_and_stiffness_assembly(CON.xlamb,...
 %        GEOM,MAT,FEM,GLOBAL,CONSTANT,QUADRATURE.element,PLAST,KINEMATICS);
       %----------------------------------------------------------------
@@ -233,36 +235,41 @@ while(Time<=tMax)
 %                    GLOBAL,LOAD,QUADRATURE.boundary,CON.xlamb);
 %       end
   end
-
- % step 7 Update nodal displacments 
-    % store old displacements for energy computation
-    disp_prev = disp_n;
-    % update nodal displacements 
-    disp_n = disp_n + dt_nphalf *velocities_half;
-    
-%----------------------------------------------------------------
-% Update stored coodinates.
   
-  displ = disp_n-disp_prev; 
-  GEOM.x = update_geometry(GEOM.x,1,displ(BC.freedof),BC.freedof);
-  dx = GEOM.x - GEOM.x0;
-%----------------------------------------------------------------
+%   % step 7 Update nodal displacments 
+%     % store old displacements for energy computation
+%     disp_prev = disp_n;
+%     % update nodal displacements 
+%     disp_n = disp_n + dt_nphalf *velocities_half;
+%     
+% %----------------------------------------------------------------
+% % Update stored coodinates.
+%   
+%   displ = disp_n-disp_prev; 
+%   GEOM.x = update_geometry_explicit(GEOM.x,GEOM.x0,1,disp_n(BC.freedof),BC.freedof);
+%   dx = GEOM.x - GEOM.x0;
+% %----------------------------------------------------------------   
   
   % save internal force, to be used in energy computation
   fi_prev = GLOBAL.T_int;
-  fe_prev = GLOBAL.external_load;
+  fe_prev = GLOBAL.external_load_effective;
+  re_prev = GLOBAL.Reactions;
+
+  ffid = fopen('GlobalForce.txt','a+');
+fprintf(ffid,"\ns%u\n",time_step_counter);
+fclose(ffid);
   
 %step 8 - getForce
   [GLOBAL,updated_PLAST,GEOM.Jn_1,GEOM.VolRate] = getForce_explicit(CON.xlamb,...
           GEOM,MAT,FEM,GLOBAL,CONSTANT,QUADRATURE,PLAST,KINEMATICS,BC,DAMPING,dt);
-  
+      
   % updated stable time increment based on current deformation     
   dt_old=dt;
   dt = prefactor * CalculateTimeStep(PRO,FEM,GEOM,CON,BC,GLOBAL,MAT,DAMPING);
   
 %step 9 - compute accelerations.       
   AccOld = GLOBAL.accelerations;
-  GLOBAL.accelerations = inv(GLOBAL.M)*(GLOBAL.external_load - GLOBAL.T_int);
+  GLOBAL.accelerations = inv(GLOBAL.M)*(GLOBAL.external_load_effective - GLOBAL.T_int);
   
 % step 10 second partial update of nodal velocities
   VelOld = GLOBAL.velocities;
@@ -273,20 +280,19 @@ while(Time<=tMax)
 %--------------------------------------------------------------
   
 % step 11 check energy
-  [energy_value, max_energy] = check_energy_explicit(PRO,FEM,CON,BC,GLOBAL,disp_n, disp_prev,GLOBAL.T_int,fi_prev,GLOBAL.external_load,fe_prev,t_n);
+  [energy_value, max_energy] = check_energy_explicit(PRO,FEM,CON,BC, ...
+      GLOBAL,disp_n, disp_prev,GLOBAL.T_int,fi_prev,...
+      GLOBAL.external_load_effective,fe_prev,t_n);
   
-  % plot 
-%   if( mod(time_step_counter,nsteps_plot) == 0 )
-%       plot_counter = plot_counter +1;
-%       PLAST = save_output(updated_PLAST,PRO,FEM,GEOM,QUADRATURE,BC,...
-%                 MAT,LOAD,CON,CONSTANT,GLOBAL,PLAST,KINEMATICS);  
-%   end
-%Plot every 4 steps
+%Plot every # steps
   if( mod(time_step_counter,outputfreq) == 0 )
       plot_counter = plot_counter +1;
-%       output(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE.element,CONSTANT,KINEMATICS);
-      PLAST = save_output(updated_PLAST,PRO,FEM,GEOM,QUADRATURE,BC,...
-                MAT,LOAD,CON,CONSTANT,GLOBAL,PLAST,KINEMATICS);  
+      
+      output(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE.element,CONSTANT,KINEMATICS);
+      output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE.element,CONSTANT,KINEMATICS);
+
+%       PLAST = save_output(updated_PLAST,PRO,FEM,GEOM,QUADRATURE,BC,...
+%                 MAT,LOAD,CON,CONSTANT,GLOBAL,PLAST,KINEMATICS);  
   end
   
   time_step_counter = time_step_counter + 1;  

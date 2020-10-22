@@ -39,7 +39,7 @@ fid4= fopen(string2,string);
  aux                       =  reshape(aux,GEOM.ndime,[]);
  info3(:,3:end)             =  [GEOM.x'  aux'];
 
-aux(BC.fixdof)            =  GLOBAL.Reactions;
+aux(BC.fixdof)            =  GLOBAL.Reactions(BC.fixdof);
 %format long
 %aux
 

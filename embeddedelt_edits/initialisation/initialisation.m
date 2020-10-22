@@ -28,7 +28,8 @@ end
 %--------------------------------------------------------------------------    
 GEOM.x0              = GEOM.x;
 GLOBAL.Residual      = zeros(FEM.mesh.n_dofs,1);
-GLOBAL.external_load = zeros(FEM.mesh.n_dofs,1); 
+GLOBAL.external_load = zeros(FEM.mesh.n_dofs,1);
+GLOBAL.Reactions      = zeros(FEM.mesh.n_dofs,1);
 
 global explicit  % needs to be defined in order for explicit to be global
 % Define velocity and accelerations for explicit method;

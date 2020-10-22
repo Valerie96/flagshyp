@@ -24,8 +24,7 @@ switch FEM.mesh.element_type
         KINEMATICS.n      = zeros(GEOM.ndime,GEOM.ndime,QUADRATURE.ngauss);
         
         %|-/ 
-        %Previous Deformation Gradient
+        %Previous Deformation Gradient Needs J to initially be 1
         KINEMATICS.J      = ones(QUADRATURE.ngauss,1);
-        KINEMATICS.Jn_1   = ones(QUADRATURE.ngauss,1);
 end
         

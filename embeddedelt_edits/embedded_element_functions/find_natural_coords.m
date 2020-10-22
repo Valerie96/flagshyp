@@ -198,9 +198,9 @@ fprintf("%u\n",cnt);
 
    %Check the error between the known xyz coordinate (a) and the calculated
    % xyz based on the natural coordinates
-    err = (a - NN*x);
-    cnt=cnt+1;
-    fprintf("error = [%d %d %d]\n", (err(1)), (err(2)), (err(3)));
+%     err = (a - NN*x);
+%     cnt=cnt+1;
+%     fprintf("error = [%d %d %d]\n", (err(1)), (err(2)), (err(3)));
 %     fprintf("sign(error) = [%d %d %d]\n\n", sign(err(1)), sign(err(2)), sign(err(3)));
 end
 

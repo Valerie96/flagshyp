@@ -24,7 +24,7 @@ KINEMATICS = gradients(xlocal,x0local,FEM.interpolation.element.DN_chi,...
 
 %|-/
 Jn_1=GEOM.Jn_1(ielement);
-J=KINEMATICS.J(ielement);
+J=KINEMATICS.J(1);
 eps_dot = (J-Jn_1)/dt;
 b1=DAMPING.b1;
 b2=DAMPING.b2;

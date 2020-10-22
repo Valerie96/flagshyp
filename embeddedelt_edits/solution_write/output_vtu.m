@@ -190,7 +190,7 @@ if (CON.incrm==0)
     end
 else
     %GLOBAL.Reactions
-    aux(BC.fixdof)            =  GLOBAL.Reactions;
+    aux(BC.fixdof)            =  GLOBAL.Reactions(BC.fixdof);
     %aux(BC.freedof)           =  GLOBAL.external_load(BC.freedof)
     %aux                       =  reshape(aux,GEOM.ndime,[])
     
