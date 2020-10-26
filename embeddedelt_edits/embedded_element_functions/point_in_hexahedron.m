@@ -76,10 +76,10 @@ end
 % Point of interest p=[p1 p2 p3];
 % Given face normals of triangular faces and point on face, determine if the point is inside
 
-% % p = [1 0.1 0.5]; 
-% % x = [1,1,0,0,1,1,0,0;0,1,1,0,0,1,1,0;0,0,0,0,1,1,1,1];
-% % 
-% % %For testing
+% p = [1 0.1 0.5]; 
+% x = [1,1,0,0,1,1,0,0;0,1,1,0,0,1,1,0;0,0,0,0,1,1,1,1];
+% 
+% %For testing
 %         F=[1 0 0; 0 1 0; 0 0 1];
 %         F=[2 0 0.6; 0 4 0; 0.6 0 1.5];
 %         F=[2 -.1 -0.6; -.0 .5 0; -0.6 0 1.7];
@@ -90,11 +90,11 @@ end
 %            xn(:,i) = F*x(:,i); 
 %         end
 %         x=xn;
-% %So what we need to do is check if point p is on the positive or negitive
-% %sides of each face. If it's on the negitive (oposite the plane normal) of
-% %all the faces, then it's inside of the hex. 
-% 
-% 
+%So what we need to do is check if point p is on the positive or negitive
+%sides of each face. If it's on the negitive (oposite the plane normal) of
+%all the faces, then it's inside of the hex. 
+
+
 % %Define a 3x3x12 matrix defining the 6 faces
 % faces = zeros(3,3,12);
 % faces(:,:,1) = [x(:,4) x(:,3) x(:,2)];
@@ -180,4 +180,4 @@ end
 % 
 % end
 %     
-%    
+   

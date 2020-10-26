@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 %  Update coodinates of displacement (Dirichlet) boundary conditions.
 %--------------------------------------------------------------------------
-function [x v]       = update_prescribed_displacements_explicit(dofprescribed,x0,x,...
+function [x, v]       = update_prescribed_displacements_explicit(dofprescribed,x0,x,...
                     v, presc_displacement,time_n, total_time)
 
 Dirichlet_dof    = dofprescribed;

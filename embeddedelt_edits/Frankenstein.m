@@ -1,13 +1,13 @@
 %A bunch of pieces of flagshyp smashed together so I can actually figure
 %out what all of the variables are. This may be a disaster
 clear; clc; close all; 
-% inputfile='explicit_embedded3D_new.dat';
-% inputfile='explicit_embedded_4elt_new.dat';
+inputfile='explicit_embedded3D_new.dat';
+inputfile='explicit_embedded_4elt_new.dat';
 inputfile='cylinder_embedded.dat';
-% % inputfile='longthing.dat';
+% inputfile='longthing.dat';
 basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
 simtime = 0.01;
-outputfreq=2;
+outputfreq=20;
 DAMPING.b1 = 0.042; %Linear bulk viscosity damping
 DAMPING.b2 = 0; %Quadratic bulk viscosity damping
 
@@ -255,9 +255,9 @@ while(Time<=tMax)
   fe_prev = GLOBAL.external_load_effective;
   re_prev = GLOBAL.Reactions;
 
-  ffid = fopen('GlobalForce.txt','a+');
-fprintf(ffid,"\ns%u\n",time_step_counter);
-fclose(ffid);
+%   ffid = fopen('GlobalForce.txt','a+');
+% fprintf(ffid,"\ns%u\n",time_step_counter);
+% fclose(ffid);
   
 %step 8 - getForce
   [GLOBAL,updated_PLAST,GEOM.Jn_1,GEOM.VolRate] = getForce_explicit(CON.xlamb,...

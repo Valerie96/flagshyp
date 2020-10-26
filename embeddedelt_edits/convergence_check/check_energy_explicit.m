@@ -22,11 +22,6 @@ string3=sprintf('energy.dat');
 
 fid5= fopen(string3,string);
 
-% %internal work
-% f = setdiff([1:FEM.mesh.n_dofs],BC.dofprescribed);
-% sum = (disp_n(f) - disp_prev(f))' * (fi_n(f) + fi_prev(f));
-% Wint_n = Wint_n + 0.5 * sum;
-
 %internal work
 sum = (disp_n - disp_prev)' * (fi_n + fi_prev);
 Wint_n = Wint_n + 0.5 * sum;
@@ -34,11 +29,6 @@ Wint_n = Wint_n + 0.5 * sum;
 %external work
 sum = (disp_n - disp_prev)' * (fe_n + fe_prev);
 Wext_n = Wext_n + 0.5 * sum;
-
-% %external work via prescribed displament forces
-% p = BC.dofprescribed;
-% sum = (disp_n(p) - disp_prev(p))' * (fi_n(p) + fi_prev(p));
-% Wext_n = Wext_n + 0.5 * sum;
 
 % kinetic energy
 WKE = 0;

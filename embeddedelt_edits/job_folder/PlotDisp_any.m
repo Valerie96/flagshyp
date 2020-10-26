@@ -1,8 +1,13 @@
 %Plot Displacment
 % close all; clear; clc;
 name="cylinder"
-name="longthing"
+name="explicit_embedded_4elt_new"
 damplev="06";
+steps = 440;
+nplot = 1;
+n_nodes = 24;
+
+
 % x0=GEOM.x0;
 % connect = FEM.mesh.connectivity;
 % nelt = size(connect,2);
@@ -16,9 +21,7 @@ file = strcat(basedir, '/AVD_Check.txt');
 
 fid =fopen(file, 'r');
 
-steps = 353;
-nplot = 2;
-n_nodes = 20; 
+ 
 
 numsteps = floor(steps/nplot);
 u = zeros(numsteps,n_nodes,3);
@@ -28,7 +31,7 @@ formspec = [repmat('%f ',1,3)];
 tline=fgetl(fid);
 for j=1:numsteps
     for i = 1:2
-        tline=fgetl(fid);
+        tline=fgetl(fid)
     end 
 
     uu=fscanf(fid, formspec, [3,n_nodes]);

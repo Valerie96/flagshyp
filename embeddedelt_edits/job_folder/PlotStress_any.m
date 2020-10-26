@@ -2,17 +2,14 @@
 %  clear; clc; %close all;
 G=76.92e9; lam=115.4e9;
 % name = "cylinder";
-damplev = "";
-% steps = 24760;
-% nplot = 20;
-% n_elts = 8;
-% n_nodes = 27;
+name="explicit_embedded_4elt_new"
+damplev="";
+steps = 440;
+nplot = 1;
+n_nodes = 24;
 
-name = "longthing";
+
 n_elts = 4;
-steps = 353;
-nplot = 2;
-n_nodes = 20; 
 elt = 1;
 
 % name = "longthing_shortdt";
