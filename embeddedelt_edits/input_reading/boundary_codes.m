@@ -20,7 +20,7 @@ switch code
     case 7
          dof = [1;1;1];
     case 8
-         dof = [1;1;1];
+         dof = [0;0;0];
 end
 switch dim
     case 2

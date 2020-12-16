@@ -34,8 +34,8 @@ fid4= fopen(string2,string);
  info3(:,1)                 =  (1:GEOM.npoin)';
  info3(:,2)                 =  BC.icode;
  aux                       =  zeros(FEM.mesh.n_dofs,1);
-% % aux(BC.fixdof)            =  GLOBAL.Reactions;
-% % aux(BC.freedof)           =  GLOBAL.external_load(BC.freedof);
+ aux(BC.fixdof)            =  GLOBAL.Reactions(BC.freedof);
+ aux(BC.freedof)           =  GLOBAL.external_load(BC.freedof);
  aux                       =  reshape(aux,GEOM.ndime,[]);
  info3(:,3:end)             =  [GEOM.x'  aux'];
 

@@ -17,14 +17,15 @@ if (~PRO.rest && CON.incrm==0)
     end
     cd VTU;
     string='w';
-    system('rm out-*.vtu');
-    system('rm out-*.vtk');
+    delete (sprintf('%s-out-*.vtu',PRO.vtu_file_stater));
+    delete (sprintf('%s-out-*.vtk',PRO.vtu_file_stater));
 else
     cd VTU;
 end
 
 
-string2=sprintf('out-%d.vtu',CON.incrm);
+string2=sprintf('%s-out-%d.vtu',PRO.vtu_file_stater,CON.incrm);
+% string2=sprintf('out-%d.vtu',CON.incrm);
 fid3= fopen(string2,'w');
 
 
@@ -58,8 +59,8 @@ info3                      =  zeros(GEOM.npoin,2 + 2*GEOM.ndime);
 info3(:,1)                 =  (1:GEOM.npoin)';
 info3(:,2)                 =  BC.icode;
 aux                       =  zeros(FEM.mesh.n_dofs,1);
-% aux(BC.fixdof)            =  GLOBAL.Reactions;
-% aux(BC.freedof)           =  GLOBAL.external_load(BC.freedof);
+aux(BC.fixdof)            =  GLOBAL.Reactions(BC.fixdof);
+aux(BC.freedof)           =  GLOBAL.external_load(BC.freedof);
 aux                       =  reshape(aux,GEOM.ndime,[]);
 info3(:,3:end)             =  [GEOM.x'  aux'];
 
@@ -159,6 +160,28 @@ for i = 1:GEOM.npoin
 end
 fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space);
 
+% accelerations
+% extract data
+info4 = zeros(GEOM.npoin, GEOM.ndime);
+for i=1:GEOM.npoin
+    m = (i-1)*GEOM.ndime + [ 1 2 3];
+    info4(i,:) = GLOBAL.accelerations(m);
+end
+
+fprintf(fid3,'%s%s%s%s<DataArray type="Float32" Name="Acc" NumberOfComponents="3" ComponentName0="x" ComponentName1="y" ComponentName2="z" format="ascii">\n',...
+    space,space,space,space);
+for i = 1:GEOM.npoin
+    if GEOM.ndime == 2
+        fprintf(fid3,'%s%s%s%s%s%.10e %.10e %.10e\n',space,space,space,space,space,...
+            info4(i,1),info4(i,2),0.0);
+        
+    elseif GEOM.ndime == 3
+        fprintf(fid3,'%s%s%s%s%s%.10e %.10e %.10e\n',space,space,space,space,space,...
+            info4(i,1),info4(i,2),info4(i,3)); 
+    end
+end
+fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space);
+
 
 
 fprintf(fid3,'%s%s%s%s<DataArray type="Int32" Name="Boundary" NumberOfComponents="1" ComponentName0="BC_Value" format="ascii">\n',...
@@ -167,8 +190,6 @@ for i = 1:GEOM.npoin
     fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,info2(i,2));
 end
 fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space);
-
-
 
 
 if (CON.incrm==0)

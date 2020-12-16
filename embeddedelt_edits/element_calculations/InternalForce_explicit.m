@@ -1,4 +1,4 @@
- %--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Computes the element vector of global internal forces and the tangent
 % stiffness matrix. 
 %--------------------------------------------------------------------------
@@ -111,6 +111,23 @@ for igauss=1:QUADRATURE.ngauss
     T = (Cauchy+p1+p2)*kinematics_gauss.DN_x;
     T_internal = T_internal + T(:)*JW;
     
+    
+    if ielement == 1
+        Ffid = fopen('Stress.txt','a+');
+        formt = [repmat('%1.4d ',1,3) '\n'];
+        fprintf(Ffid,"\nStress Elt 3:\n");
+        ti=strcat("GP", int2str(igauss));
+        fprintf(Ffid, ti);fprintf(Ffid,"\n");
+            for j=1:3
+            fprintf(Ffid, formt, Cauchy(j,:));
+            end
+            fprintf(Ffid,"\n");
+
+
+        fclose(Ffid);
+       
+    end
+        
 end
 
 % |-/
@@ -121,18 +138,7 @@ end
     VolRate = eps_dot;
 % |-/
 
-% Ffid = fopen('Pressure.txt','a+');
-% formt = [repmat('%1.4d ',1,3) '\n'];
-% fprintf(Ffid,"\np1:\n");
-% ti=strcat("Element", int2str(ielement));
-% fprintf(Ffid, ti);fprintf(Ffid,"\n");
-%     for j=1:3
-%     fprintf(Ffid, formt, p1(j,:));
-%     end
-%     fprintf(Ffid,"\n");
-% 
-% 
-% fclose(Ffid);
+
     
 %--------------------------------------------------------------------------
 % Compute conttribution (and extract relevant information for subsequent
@@ -147,9 +153,27 @@ switch matyp
 end 
 
 %|-/
-% Embedded Elt, Internal force modification
-% [T_internal,PLAST_element] = CorrectInternalForce_explicit(FEM,GEOM,ielement,...
-%     element_connectivity,Ve,QUADRATURE,MAT,PLAST,plast_gauss,counter,KINEMATICS)
+% Embedded Elt, Internal force modification, if this element has any
+% embedded elements
+
+if GEOM.embedded.HostTotals(ielement,3) > 0
+    search = 0;
+    for eelt = 1:GEOM.npoin
+        if GEOM.embedded.ElementHost(eelt,2) == ielement
+%             fprintf("Host: %u    Guest: %u\n", ielement, eelt);
+            
+%               T_internal = CorrectInternalForce_explicit(ielement,...
+%                            T_internal,FEM, xlocal,x0local,...
+%                            QUADRATURE,CONSTANT,GEOM,...
+%                            PLAST,KINEMATICS,MAT,DAMPING,eelt);
+
+              search = search + 1;
+              if search >= GEOM.embedded.HostTotals(ielement,3)
+                  break;
+              end
+        end
+    end
+end
 %--------------------------------------------------------------------------
 % Store internal variables.
 %--------------------------------------------------------------------------

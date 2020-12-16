@@ -60,7 +60,7 @@ for ielement=1:FEM.mesh.nelem
         % compute N^T * * N
         MeGQ= Nm' * Nm;
         %----------------------------------------------------------------------
-        % Derivative of shape functions with respect to ...
+        % Derivative of natural space with respect to ...
         % - initial coordinates.
         %----------------------------------------------------------------------
         DX_chi = x0local*DN_chi(:,:,igauss)';
@@ -109,6 +109,13 @@ end
 
 GLOBAL.M=LumpedMass;
 
+M_total = 0 ;
+for i = 1:massSize
+    M_total = M_total + LumpedMass(i,i);
+end
+fprintf('Total mesh mass is: %15.5f \n', M_total);
+
+fprintf('\n');
       
 end
 

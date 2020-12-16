@@ -3,7 +3,7 @@
 % and equivalent force vector, excluding pressure components.
 %----------------------------------------------------------------------
 function [GEOM,LOAD,GLOBAL,PLAST,KINEMATICS] = ...
-         initialisation(FEM,GEOM,QUADRATURE,MAT,LOAD,CONSTANT,CON,GLOBAL)
+         initialisation(FEM,GEOM,QUADRATURE,MAT,LOAD,CONSTANT,CON,GLOBAL,BC)
 %--------------------------------------------------------------------------    
 % Initialisation of internal variables for plasticity.
 %--------------------------------------------------------------------------    
@@ -73,11 +73,24 @@ GLOBAL.nominal_pressure = zeros(FEM.mesh.n_dofs,1);
                                                  CONSTANT,QUADRATURE.element,PLAST,KINEMATICS); 
                                              
                                              
-if(explicit ==1)     
-    [GLOBAL] = mass_assembly(CON.xlamb,GEOM,MAT,FEM,GLOBAL,...
+if(explicit ==1)
+    if ~isempty(FEM.mesh.embedded)
+        GEOM = inverse_mapping(GEOM,FEM,BC.tienodes);
+        [GLOBAL] = effective_mass_assembly(GEOM,MAT,FEM,GLOBAL,QUADRATURE.element);
+
+
+    else
+        GEOM.embedded.NodeHost    = zeros(GEOM.npoin,2);
+        GEOM.embedded.ElementHost = zeros(FEM.mesh.nelem,9);
+        GEOM.embedded.HostTotals  = zeros(FEM.mesh.nelem,3);
+        GEOM.embedded.Embed_Zeta  = zeros(4, GEOM.npoin);
+        
+        [GLOBAL] = mass_assembly(CON.xlamb,GEOM,MAT,FEM,GLOBAL,...
                           CONSTANT,QUADRATURE.element,PLAST,KINEMATICS);
+                      
+    end
 end 
 
-
+        
 end
 

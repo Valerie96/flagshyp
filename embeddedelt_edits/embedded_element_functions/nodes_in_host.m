@@ -1,6 +1,5 @@
 
 function GEOM = nodes_in_host(GEOM,FEM,tienodes)
-
 %Identify the host element of each embedded node
 
 e_elets = tienodes;

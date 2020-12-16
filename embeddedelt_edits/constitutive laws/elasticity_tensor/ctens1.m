@@ -8,6 +8,7 @@ J          = kinematics.J;
 lambda_    = lambda/J;
 mu_        = (mu - lambda*log(J))/J;
 c          = lambda_*cons.IDENTITY_TENSORS.c1 + mu_*cons.IDENTITY_TENSORS.c2;
+
 end
 
 

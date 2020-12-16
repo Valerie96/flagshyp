@@ -2,14 +2,14 @@
 %  clear; clc; %close all;
 G=76.92e9; lam=115.4e9;
 % name = "cylinder";
-name="explicit_embedded_4elt_new"
+name="explicit_embedded_elastic"
 damplev="";
-steps = 440;
-nplot = 1;
-n_nodes = 24;
+steps = 385;
+nplot = 2;
+n_nodes = 16;
 
 
-n_elts = 4;
+n_elts = 2;
 elt = 1;
 
 % name = "longthing_shortdt";
@@ -27,7 +27,7 @@ stress_elt=zeros(numsteps, 6 , n_elts, 8);
 
 
 
- tline=fgetl(fid);
+ tline=fgetl(fid)
 for  j=1:numsteps
     for i = 1:(n_elts + n_nodes +4) 
         tline=fgetl(fid);

@@ -5,6 +5,7 @@
 function GEOM = initial_volume(FEM,GEOM,QUADRATURE,MAT,KINEMATICS)
 Ve      = zeros(FEM.mesh.nelem,1); 
 V_total = 0;
+M_total = 0;
 for ielement=1:FEM.mesh.nelem
     global_nodes    = FEM.mesh.connectivity(:,ielement);   
     xlocal          = GEOM.x(:,global_nodes);              
@@ -41,6 +42,8 @@ for ielement=1:FEM.mesh.nelem
     % Total volume of the mesh. 
     %----------------------------------------------------------------------
     V_total = V_total + Ve(ielement);
+    %Total Mass of mesh (for fun)
+    M_total = M_total + Ve(ielement)*properties(1);
 end
 %--------------------------------------------------------------------------
 % Save information in data structure.
@@ -48,6 +51,7 @@ end
 GEOM.Ve      = Ve;
 GEOM.V_total = V_total;
 fprintf('Total mesh volume is: %15.5f \n', GEOM.V_total)
+fprintf('Total mesh mass is: %15.5f \n', M_total)
 
 
 

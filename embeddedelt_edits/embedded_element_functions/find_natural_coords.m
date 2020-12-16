@@ -54,7 +54,7 @@ tol=10^-6;
 cnt=1;
 
 while abs(err(1))>tol || abs(err(2))>tol || abs(err(3))>tol
-fprintf("%u\n",cnt);
+% fprintf("%u\n",cnt);
     %Calculate function F=NN*x-a=0 to be solved based on current values of
     %chi eta and iota
     F =   [-a1 - (1/8) * (-1 + chi) * (-1 + eta) * (-1 + iota) * x1 ...
@@ -201,7 +201,7 @@ fprintf("%u\n",cnt);
    % xyz based on the natural coordinates
     err = (a - NN*x);
     cnt=cnt+1;
-    fprintf("error = [%d %d %d]\n", (err(1)), (err(2)), (err(3)));
+%     fprintf("error = [%d %d %d]\n", (err(1)), (err(2)), (err(3)));
 %     fprintf("sign(error) = [%d %d %d]\n\n", sign(err(1)), sign(err(2)), sign(err(3)));
 end
 

@@ -24,8 +24,9 @@ counter          = 1;
 
 % Main element loop.
 %--------------------------------------------------------------------------
-for ielement=1:FEM.mesh.nelem
-% for ielement=1:FEM.mesh.host
+% for ielement=1:FEM.mesh.nelem
+for ii=1:length(FEM.mesh.host)
+    ielement=FEM.mesh.host(ii);
     %----------------------------------------------------------------------
     % GATHER Temporary variables associated with a particular element.
     %----------------------------------------------------------------------
@@ -107,11 +108,12 @@ end
 % |-/
 
 GLOBAL.external_load_effective(BC.fixdof) = GLOBAL.T_int(BC.fixdof);
-  
+% GLOBAL.external_load_effective(BC.tiedof) = GLOBAL.T_int(BC.tiedof);
+
 % algorithm in box 6.1 gives f_n = f_ext - f_int
 GLOBAL.Residual = GLOBAL.external_load_effective - GLOBAL.T_int;
 GLOBAL.Reactions(BC.fixdof) =  GLOBAL.Residual(BC.fixdof) + GLOBAL.external_load_effective(BC.fixdof);
-
+% GLOBAL.Reactions(BC.tiedof) =  GLOBAL.Residual(BC.tiedof) + GLOBAL.external_load_effective(BC.tiedof);
 % 
 % ffid = fopen('GlobalForce.txt','a+');
 %     fprintf(ffid,"Global Internal Force:\n"); 

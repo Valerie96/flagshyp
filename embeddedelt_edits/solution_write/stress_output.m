@@ -49,7 +49,9 @@ if matyp~=2
        Cauchy  = mean_dilatation_pressure_addition(Cauchy,zeros(dim,dim,dim,dim),...
                                    CONSTANT,pressure,matyp);           
        thickness = thickness_plane_stress(properties,kinematics_gauss.J,matyp);
-       Stress(1:end,igauss) = [Cauchy(components);thickness]    ; 
+       Stress(1:end,igauss) = [Cauchy(components);thickness];     
+       
+       
    end
    %-----------------------------------------------------------------------
    % Remove thickness from non-plane stress elements.

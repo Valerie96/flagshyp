@@ -88,7 +88,8 @@ if( strcmp(deblank(ansmlv),deblank('y')) || strcmp(deblank(ansmlv),deblank('Y'))
     PRO.restartfile_name          = [PRO.inputfile_name(1:character_dot-1)...
                                     '-increment_1' '-RESTART.MAT']; 
     PRO.internal_restartfile_name = [PRO.inputfile_name(1:character_dot-1)...
-                                    '-RESTART.MAT'];                                                               
+                                    '-RESTART.MAT'];   
+    PRO.vtu_file_stater           = [PRO.inputfile_name(1:character_dot-1)];  
     if( ~ PRO.rest )
         PRO.fid_output  = fopen(PRO.outputfile_name,'w+');
         PRO.fid_restart = fopen(PRO.restartfile_name,'wb');
