@@ -156,19 +156,19 @@ end
 % Embedded Elt, Internal force modification, if this element has any
 % embedded elements
 
-if GEOM.embedded.HostTotals(ielement,3) > 0
+if GEOM.embedded.HostTotals(ielement,2) > 0
     search = 0;
     for eelt = 1:GEOM.npoin
-        if GEOM.embedded.ElementHost(eelt,2) == ielement
+        if GEOM.embedded.ElementHost(eelt) == ielement
 %             fprintf("Host: %u    Guest: %u\n", ielement, eelt);
             
-%               T_internal = CorrectInternalForce_explicit(ielement,...
-%                            T_internal,FEM, xlocal,x0local,...
-%                            QUADRATURE,CONSTANT,GEOM,...
-%                            PLAST,KINEMATICS,MAT,DAMPING,eelt);
+              T_internal = CorrectInternalForce_explicit(ielement,...
+                           T_internal,FEM, xlocal,x0local,...
+                           QUADRATURE,CONSTANT,GEOM,...
+                           PLAST,KINEMATICS,MAT,DAMPING,eelt);
 
               search = search + 1;
-              if search >= GEOM.embedded.HostTotals(ielement,3)
+              if search >= GEOM.embedded.HostTotals(ielement,2)
                   break;
               end
         end

@@ -1,4 +1,4 @@
- %--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 %  Update coodinates of embedded element displacements.
 %--------------------------------------------------------------------------
 
@@ -31,19 +31,19 @@ function [x,v,a]       = update_embedded_displacements_explicit(tiedof,...
 
 
         %Get the current coordinates of the host element
-        host = GEOM.embedded.NodeHost(m,2);        %host element number
+        host = GEOM.embedded.NodeHost(m);        %host element number
         host_nn=mesh.connectivity(:,host); %nodes of host element
         host_xn = x(:,host_nn);            %nodal coordinates of embedded elet in host
 
         %Calculate interpolated displacment values at embedded node location
-        XeUpdate=find_xyz_in_host(Ze(2:4,m), host_xn);
+        XeUpdate=find_xyz_in_host(Ze(:,m), host_xn);
         
         %Calculate interpolated velocity values
         host_dof = dof(:, host_nn);
-        V_Update = find_xyz_in_host(Ze(2:4,m),v(host_dof));
+        V_Update = find_xyz_in_host(Ze(:,m),v(host_dof));
         
         %Calculate interpolated acceleration values
-        A_Update = find_xyz_in_host(Ze(2:4,m),a(host_dof));
+        A_Update = find_xyz_in_host(Ze(:,m),a(host_dof));
         
         %Fill TieUpdate with new xyz locations
         TieXUpdate((m-1)*dim+(1:dim)) = XeUpdate;

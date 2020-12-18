@@ -2,6 +2,7 @@
 % Read and construct element type data. 
 %--------------------------------------------------------------------------
 function [FEM,GEOM,QUADRATURE]                 = elinfo(fid)                
+FEM.mesh.n_elet_type                           = fscanf(fid,'%d',1); 
 FEM.mesh.element_type                          = strtrim(fgets(fid));
 switch FEM.mesh.element_type
     case 'truss2'

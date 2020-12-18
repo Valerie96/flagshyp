@@ -58,7 +58,7 @@ VolCorrect = false;
     %---------------------------------------------------------------------------
     
     %Get the number of Gauss points in the element
-    nGp = GEOM.embedded.HostTotals(ielement,2);
+    nGp = GEOM.embedded.HostTotals(ielement,1);
     
     %Get host element nodes
     h_connectivity = FEM.mesh.connectivity(:,ielement);
@@ -68,7 +68,7 @@ VolCorrect = false;
     e_connectivity = FEM.mesh.connectivity(:,eelt);
     x_e = GEOM.x0(:,e_connectivity);
     xelocal  = GEOM.x(:,e_connectivity);                     
-    e_nodes_zeta = GEOM.embedded.Embed_Zeta(2:4,e_connectivity);
+    e_nodes_zeta = GEOM.embedded.Embed_Zeta(:,e_connectivity);
     
     QUADRATURE_E = QUADRATURE; %Quadrature of embedded elt (assuming same element type as host)
     QUADRATURE_EH = QUADRATURE; %Quadrature of embedded elt in the host domain 

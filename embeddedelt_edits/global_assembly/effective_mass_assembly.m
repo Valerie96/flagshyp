@@ -46,7 +46,7 @@ for ii=1:length(FEM.mesh.host)
     
         for jj=1:length(FEM.mesh.embedded)
            jelement = FEM.mesh.embedded(jj); 
-           if GEOM.embedded.ElementHost(jelement,2) == ielement
+           if GEOM.embedded.ElementHost(jelement,1) == ielement
                %i: get element vol and other properties
                %later for "truss" elements calculate volume
                     global_nodes_f    = FEM.mesh.connectivity(:,jelement);   

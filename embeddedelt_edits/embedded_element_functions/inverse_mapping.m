@@ -15,10 +15,10 @@ function GEOM = inverse_mapping(GEOM,FEM,tienodes)
 %     Zeta = zeros(4,length(e_nodes)); Zeta(1,:) = e_nodes;
 
 
-    NodeHost = zeros(GEOM.npoin,2);
-    ElementHost = zeros(FEM.mesh.nelem,9);
-    HostTotals = zeros(FEM.mesh.nelem,3); HostTotals(:,1) = 1:FEM.mesh.nelem;
-    Zeta = zeros(4, GEOM.npoin);
+    NodeHost = zeros(GEOM.npoin,1);
+    ElementHost = zeros(FEM.mesh.nelem,8);
+    HostTotals = zeros(FEM.mesh.nelem,2);
+    Zeta = zeros(3,GEOM.npoin);
     
     %Loop throgh host elements
     for j = 1:length(h_elts)
@@ -31,19 +31,17 @@ function GEOM = inverse_mapping(GEOM,FEM,tienodes)
             ne = e_nodes(i);
 
             %Check if we already did this node
-            if NodeHost(ne,2) == 0
-                NodeHost(ne,1) = ne;
+            if NodeHost(ne) == 0
                 x_ne = GEOM.x0(:,ne);
                 inel = point_in_hexahedron(x_ne', x_h);
 
                 %Check if it's in this host elt
                 if inel
-                    NodeHost(ne,2) = h;
-                    HostTotals(h,2) = HostTotals(h,2) + 1;
+                    NodeHost(ne) = h;
+                    HostTotals(h,1) = HostTotals(h,1) + 1;
 
                     %Find natrual coordinates of the node
-                    Zeta(1,ne) = ne;
-                    Zeta(2:4,ne) = find_natural_coords(x_ne, x_h, FEM.mesh.element_type);
+                    Zeta(:,ne) = find_natural_coords(x_ne, x_h, FEM.mesh.element_type);
                 end
             end
         end    
@@ -51,12 +49,12 @@ function GEOM = inverse_mapping(GEOM,FEM,tienodes)
 
     %Assign hosts to embedded elements based on first node
     for i=1:length(e_elts)
-        e = e_elts(i); ElementHost(e,1) = e;
+        e = e_elts(i); 
         e_connectivity = FEM.mesh.connectivity(:,e);
         n1 = e_connectivity(1); %Choose first node
-        host = NodeHost(n1,2);
-        ElementHost(e,2:9) = host;
-        HostTotals(host,3) = HostTotals(host,3) + 1;
+        host = NodeHost(n1);
+        ElementHost(e,:) = host;
+        HostTotals(host,2) = HostTotals(host,2) + 1;
     end
 
     GEOM.embedded.NodeHost = NodeHost;

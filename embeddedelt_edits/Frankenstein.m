@@ -1,9 +1,9 @@
 %A bunch of pieces of flagshyp smashed together so I can actually figure
 %out what all of the variables are. This may be a disaster
 clear; clc; close all; 
-% inputfile='explicit_embedded3D_new.dat';
+inputfile='explicit_embedded3D_new.dat';
 % inputfile='explicit_embedded_4elt_new.dat';
-inputfile='explicit_3D.dat';
+% inputfile='explicit_3D.dat';
 inputfile='seperate_embedded.dat';
 % inputfile='seperate.dat';
 basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
@@ -110,18 +110,6 @@ tic
      initialisation(FEM,GEOM,QUADRATURE,MAT,LOAD,CONSTANT,CON,GLOBAL,BC);                                           
     %----------------------------------------------------------------------
     % |-/
-    %MOVED TO INITILISATION.M
-    % Identify host element/embedded node pairs and find natural
-    % coordinates of embedded nodes, if there are embedded elements
-%     if ~isempty(FEM.mesh.embedded)
-%         GEOM = inverse_mapping(GEOM,FEM,BC.tienodes);
-%     else
-%         GEOM.embedded.NodeHost    = zeros(GEOM.npoin,2);
-%         GEOM.embedded.ElementHost = zeros(FEM.mesh.nelem,9);
-%         GEOM.embedded.HostTotals  = zeros(FEM.mesh.nelem,3);
-%         GEOM.embedded.Embed_Zeta  = zeros(4, GEOM.npoin);
-%     end 
-    
     GLOBAL.external_load_effective = GLOBAL.external_load;
     %|-/
     %----------------------------------------------------------------------
@@ -140,9 +128,7 @@ tic
 %--------------------------------------------------------------------------
 % function ExplicitDynamics_algorithm(PRO,FEM,GEOM,QUADRATURE,BC,MAT,LOAD,...
 %                                   CON,CONSTANT,GLOBAL,PLAST,KINEMATICS)
- digits
  d1=digits(64);
- digits
 %step 1 - iniitalization
 %       - this is done in the intialisation.m file, line 68
 CON.xlamb = 0;
@@ -223,13 +209,13 @@ while(Time<=tMax)
   if  BC.n_prescribed_displacements > 0
       [GEOM.x ,velocities_half]  = update_prescribed_displacements_explicit(BC.dofprescribed,...
                GEOM.x0,GEOM.x,velocities_half,BC.presc_displacement,t_n,tMax); 
-      disp_n(BC.fixdof) = GEOM.x(BC.fixdof) - GEOM.x0(BC.fixdof);  
+       disp_n(BC.fixdof) = GEOM.x(BC.fixdof) - GEOM.x0(BC.fixdof);  
 %      |-/
 %      Update coodinates of embedded nodes (if there are any)  
           if ~isempty(FEM.mesh.embedded)
               [GEOM.x,velocities_half, GLOBAL.accelerations ] = update_embedded_displacements_explicit(BC.tiedof, BC.tienodes,...
                     FEM.mesh,GEOM, velocities_half, GLOBAL.accelerations); 
-       disp_n(BC.tiedof) = GEOM.x(BC.tiedof) - GEOM.x0(BC.tiedof);
+              disp_n(BC.tiedof) = GEOM.x(BC.tiedof) - GEOM.x0(BC.tiedof);
           end
 
          dx = GEOM.x - GEOM.x0;
@@ -249,11 +235,6 @@ while(Time<=tMax)
   % save internal force, to be used in energy computation
   fi_prev = GLOBAL.T_int;
   fe_prev = GLOBAL.external_load_effective;
-%   re_prev = GLOBAL.Reactions;
-
-%   ffid = fopen('GlobalForce.txt','a+');
-% fprintf(ffid,"\ns%u\n",time_step_counter);
-% fclose(ffid);
   
 %step 8 - getForce
   [GLOBAL,updated_PLAST,GEOM.Jn_1,GEOM.VolRate] = getForce_explicit(CON.xlamb,...
@@ -276,7 +257,7 @@ while(Time<=tMax)
           if ~isempty(FEM.mesh.embedded)
               [GEOM.x,GLOBAL.velocities, GLOBAL.accelerations ] = update_embedded_displacements_explicit(BC.tiedof, BC.tienodes,...
                     FEM.mesh,GEOM, GLOBAL.velocities, GLOBAL.accelerations); 
-       disp_n(BC.tiedof) = GEOM.x(BC.tiedof) - GEOM.x0(BC.tiedof);
+               disp_n(BC.tiedof) = GEOM.x(BC.tiedof) - GEOM.x0(BC.tiedof);
           end
   
 %--------------------------------------------------------------

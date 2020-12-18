@@ -80,10 +80,10 @@ if(explicit ==1)
 
 
     else
-        GEOM.embedded.NodeHost    = zeros(GEOM.npoin,2);
-        GEOM.embedded.ElementHost = zeros(FEM.mesh.nelem,9);
-        GEOM.embedded.HostTotals  = zeros(FEM.mesh.nelem,3);
-        GEOM.embedded.Embed_Zeta  = zeros(4, GEOM.npoin);
+        GEOM.embedded.NodeHost    = zeros(GEOM.npoin,1);
+        GEOM.embedded.ElementHost = zeros(FEM.mesh.nelem,8);
+        GEOM.embedded.HostTotals  = zeros(FEM.mesh.nelem,2);
+        GEOM.embedded.Embed_Zeta  = zeros(3, GEOM.npoin);
         
         [GLOBAL] = mass_assembly(CON.xlamb,GEOM,MAT,FEM,GLOBAL,...
                           CONSTANT,QUADRATURE.element,PLAST,KINEMATICS);
