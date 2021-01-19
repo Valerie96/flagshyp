@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Check for equilibrium convergence.
 %--------------------------------------------------------------------------
-function [dt] = CalculateTimeStep(PRO,FEM,GEOM,CON,BC,GLOBAL,MAT,DAMPING)
+function [dt] = CalculateTimeStep(FEM,GEOM,MAT,DAMPING)
 
 dtMax = 1e20;
 % Main element loop.
@@ -36,10 +36,10 @@ end
         zmax = b1-(b2^2)*dt_ielt*min(0, eps_dot);
         ee=min(0, eps_dot);
 
-Ffid = fopen('Damping.txt','a+');
-formt = [repmat('%1.4d ',1,3) '\n'];
-fprintf(Ffid, 'z=%d   le=%d  e=%d  dt=%d \n',zmax,lmax,ee,dt);
-fclose(Ffid);
+% Ffid = fopen('Damping.txt','a+');
+% formt = [repmat('%1.4d ',1,3) '\n'];
+% fprintf(Ffid, 'z=%d   le=%d  e=%d  dt=%d \n',zmax,lmax,ee,dt);
+% fclose(Ffid);
 
 end
 

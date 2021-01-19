@@ -7,7 +7,8 @@
 %                 FEM.mesh,GEOM); 
             
 function [x,v,a]       = update_embedded_displacements_explicit(tiedof,...
-                    tienodes,mesh,GEOM,v,a)
+                    tienodes,FEM,GEOM,v,a)
+mesh = FEM(2).mesh;
 %|-/
 %Enforce Embedded Element constraint
 
@@ -22,7 +23,6 @@ function [x,v,a]       = update_embedded_displacements_explicit(tiedof,...
     TieXUpdate = zeros(mesh.n_dofs,1);
     TieVUpdate = zeros(mesh.n_dofs,1);
     TieAUpdate = zeros(mesh.n_dofs,1);
-    h_elets = mesh.connectivity(:,mesh.host);
 
     %Loop through embedded nodes, m
     %Disp at a tie node is = displacment of that point in the host elet
@@ -32,7 +32,7 @@ function [x,v,a]       = update_embedded_displacements_explicit(tiedof,...
 
         %Get the current coordinates of the host element
         host = GEOM.embedded.NodeHost(m);        %host element number
-        host_nn=mesh.connectivity(:,host); %nodes of host element
+        host_nn=FEM(1).mesh.connectivity(:,host); %nodes of host element
         host_xn = x(:,host_nn);            %nodal coordinates of embedded elet in host
 
         %Calculate interpolated displacment values at embedded node location

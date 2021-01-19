@@ -8,6 +8,9 @@ function FEM = shape_functions_iso_derivs(QUADRATURE,FEM,dimension)
 % Initialise the shape functions and their derivatives inside the element (e)
 % and on the faces/edges (f).
 %--------------------------------------------------------------------------
+if strcmp(FEM.mesh.element_type, 'truss2')
+    dimension = 1;
+end
 Ne      = zeros(FEM.mesh.n_nodes_elem,QUADRATURE.element.ngauss);
 DNe_chi = zeros(dimension,FEM.mesh.n_nodes_elem,QUADRATURE.element.ngauss);
 Nf      = zeros(FEM.mesh.n_face_nodes_elem,QUADRATURE.boundary.ngauss);

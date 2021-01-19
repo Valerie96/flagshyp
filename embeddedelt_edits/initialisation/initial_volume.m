@@ -3,47 +3,58 @@
 % Additionally, essential for mean dilation algorithm.
 %--------------------------------------------------------------------------
 function GEOM = initial_volume(FEM,GEOM,QUADRATURE,MAT,KINEMATICS)
-Ve      = zeros(FEM.mesh.nelem,1); 
+Global_nums = 1:GEOM.total_n_elets;
+
+n_elt_types = zeros(1,FEM(1).n_elet_type);
+n_elt_types = [FEM(1).mesh.nelem,FEM(2).mesh.nelem];
+max_elet_type = max(n_elt_types);
+
+Ve      = zeros(max_elet_type,FEM(1).n_elet_type); 
 V_total = 0;
 M_total = 0;
-for ielement=1:FEM.mesh.nelem
-    global_nodes    = FEM.mesh.connectivity(:,ielement);   
+
+for i = 1:FEM(1).n_elet_type
+for ielement=1:FEM(i).mesh.nelem
+    
+    global_nodes    = FEM(i).mesh.connectivity(:,ielement);   
     xlocal          = GEOM.x(:,global_nodes);              
-    material_number = MAT.matno(ielement);                 
-    matyp           = MAT.matyp(material_number);          
-    properties      = MAT.props(:,material_number);        
-    switch FEM.mesh.element_type
+    material_number = MAT(i).matno(ielement);                 
+    matyp           = MAT(i).matyp(material_number);          
+    properties      = MAT(i).props(:,material_number); 
+    
+    switch FEM(i).mesh.element_type
         case 'truss2'        
              area         = properties(4);  
              L            = norm(xlocal(:,2) - xlocal(:,1));    
-             Ve(ielement) = area*L;                             
+             Ve(ielement,i) = area*L;                             
         otherwise
              %-------------------------------------------------------------
              % Compute gradients with respect to isoparametric coordinates.
              %-------------------------------------------------------------
-             KINEMATICS = gradients(xlocal,xlocal,...
-                                   FEM.interpolation.element.DN_chi,...
-                                   QUADRATURE,KINEMATICS);
-             for igauss = 1:QUADRATURE.ngauss
+             KINEMATICS(i) = gradients(xlocal,xlocal,...
+                                   FEM(i).interpolation.element.DN_chi,...
+                                   QUADRATURE(i).element,KINEMATICS(i));
+             for igauss = 1:QUADRATURE(i).element.ngauss
                  %---------------------------------------------------------
                  % Computes the thickness in the deformed configuration for
                  % plane stress problems.
                  %---------------------------------------------------------
                  thickness_factor  = thickness_plane_stress(properties,...
-                                             KINEMATICS.J(igauss),matyp);            
-                 JW = KINEMATICS.Jx_chi(igauss)*QUADRATURE.W(igauss)*thickness_factor; 
+                                             KINEMATICS(i).J(igauss),matyp);            
+                 JW = KINEMATICS(i).Jx_chi(igauss)*QUADRATURE(i).element.W(igauss)*thickness_factor; 
                  %---------------------------------------------------------
                  % Compute volume of an element of the mesh.
                  %---------------------------------------------------------
-                 Ve(ielement) = Ve(ielement) + JW;
+                 Ve(ielement,i) = Ve(ielement,i) + JW;
              end
     end
     %----------------------------------------------------------------------
     % Total volume of the mesh. 
     %----------------------------------------------------------------------
-    V_total = V_total + Ve(ielement);
+    V_total = V_total + Ve(ielement,i);
     %Total Mass of mesh (for fun)
-    M_total = M_total + Ve(ielement)*properties(1);
+    M_total = M_total + Ve(ielement,i)*properties(1);
+end
 end
 %--------------------------------------------------------------------------
 % Save information in data structure.

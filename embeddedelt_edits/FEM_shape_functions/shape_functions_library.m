@@ -5,6 +5,11 @@
 %--------------------------------------------------------------------------
 function interpolation = shape_functions_library(Chi,element_type) 
 switch element_type
+    case 'truss2'
+         chi      = Chi;
+         interpolation.N = [(1/2)*(1-chi), (1/2)*(1+chi)];
+         interpolation.DN_chi = [ -1/2, 1/2];
+                                 
     case 'tria3'
          chi      = Chi(1);
          eta      = Chi(2);

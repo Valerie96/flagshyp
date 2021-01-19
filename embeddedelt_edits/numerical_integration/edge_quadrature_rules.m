@@ -3,6 +3,9 @@
 %--------------------------------------------------------------------------
 function QUADRATURE = edge_quadrature_rules(element_type)
 switch element_type
+    case 'truss2'
+        QUADRATURE.Chi  = [];
+        QUADRATURE.W    = [];
     case {'quad4','tria3'}
         QUADRATURE.Chi  = [-0.577350269189626; 0.577350269189626];
         QUADRATURE.W    = [1;1];

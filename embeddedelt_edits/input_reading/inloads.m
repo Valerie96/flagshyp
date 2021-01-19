@@ -38,9 +38,9 @@ BC.dofprescribed              = global_dof;
 %--------------------------------------------------------------------------
 format = ['%d ' repmat('%d ',1,FEM.mesh.n_face_nodes_elem) '%g'];
 info = (fscanf(fid,format,[2+FEM.mesh.n_face_nodes_elem,LOAD.n_pressure_loads]))';
-LOAD.pressure_element         = info(:,1);         
-FEM.mesh.connectivity_faces   = info(:,2:end-1)';  
-LOAD.pressure                 = info(:,end);
+% LOAD.pressure_element         = info(:,1);         
+% FEM.mesh.connectivity_faces   = info(:,2:end-1)';  
+% LOAD.pressure                 = info(:,end);
 end
  
 

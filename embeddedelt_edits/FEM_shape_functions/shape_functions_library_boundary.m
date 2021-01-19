@@ -6,6 +6,9 @@
 %--------------------------------------------------------------------------
 function interpolation = shape_functions_library_boundary(Chi,element_type) 
 switch element_type
+    case 'truss2'
+         interpolation = [];
+         
     case {'tria3','quad4'}
          chi = Chi(1);
          interpolation.N = 0.5*[1-chi, 1+chi];

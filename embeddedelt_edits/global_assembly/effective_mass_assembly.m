@@ -1,5 +1,6 @@
 %--------------------------------------------------------------------------
-% Computes and assemble lumped mass matrix
+% Computes and assemble lumped mass matrix. Mass Correct gives the option
+% to remove redundant mass from the system when using embedded elements.
 %--------------------------------------------------------------------------
 function [GLOBAL] = effective_mass_assembly(GEOM,MAT,FEM,GLOBAL,QUADRATURE)   
 
@@ -9,22 +10,23 @@ MassCorrect = false;
 ndims = GEOM.ndime; 
 massSize = ndims*GEOM.npoin;
 LumpedMass = zeros(massSize,massSize);
-n_nodes_elem = FEM.mesh.n_nodes_elem;
+
 
 M_total = 0;
 %Loop over all (host) elements
-for ii=1:length(FEM.mesh.host)
-    ielement=FEM.mesh.host(ii);
+for ii=1:length(FEM(1).mesh.nelem)
+    ielement=ii;
     %----------------------------------------------------------------------
     % Temporary variables associated with a particular element.
     %----------------------------------------------------------------------
-    global_nodes    = FEM.mesh.connectivity(:,ielement);   
-    material_number = MAT.matno(ielement);     
-    matyp           = MAT.matyp(material_number);        
-    properties      = MAT.props(:,material_number); % needs density included.
+    n_nodes_elem    = FEM(1).mesh.n_nodes_elem;
+    global_nodes    = FEM(1).mesh.connectivity(:,ielement);   
+    material_number = MAT(1).matno(ielement);     
+    matyp           = MAT(1).matyp(material_number);        
+    properties      = MAT(1).props(:,material_number); % needs density included.
     xlocal          = GEOM.x(:,global_nodes);                     
     x0local         = GEOM.x0(:,global_nodes); 
-    Ve              = GEOM.Ve(ielement);
+    Ve              = GEOM.Ve(ielement,1);
    
 
     
@@ -33,9 +35,9 @@ for ii=1:length(FEM.mesh.host)
     
     
     % quadrature locations
-    QUADRATURE.Chi;
+    QUADRATURE(1).element.Chi;
     % quadrature weights
-    QUADRATURE.W;
+    QUADRATURE(1).element.W;
    
 
     %b: calculate element mass
@@ -44,18 +46,19 @@ for ii=1:length(FEM.mesh.host)
     %c: Loop over embedded elements
     mf = 0; mc =0;
     
-        for jj=1:length(FEM.mesh.embedded)
-           jelement = FEM.mesh.embedded(jj); 
+        for jj=1:length(FEM(2).mesh.nelem)
+           jelement = jj; 
            if GEOM.embedded.ElementHost(jelement,1) == ielement
                %i: get element vol and other properties
                %later for "truss" elements calculate volume
-                    global_nodes_f    = FEM.mesh.connectivity(:,jelement);   
-                    material_numberf = MAT.matno(jelement);     
-                    matyp_f           = MAT.matyp(material_numberf);        
-                    properties_f      = MAT.props(:,material_numberf); % needs density included.
+                    n_nodes_elem_f    = FEM(2).mesh.n_nodes_elem;
+                    global_nodes_f    = FEM(2).mesh.connectivity(:,jelement);   
+                    material_numberf = MAT(2).matno(jelement);     
+                    matyp_f           = MAT(2).matyp(material_numberf);        
+                    properties_f      = MAT(2).props(:,material_numberf); % needs density included.
                     xflocal          = GEOM.x(:,global_nodes_f);                     
                     xf0local         = GEOM.x0(:,global_nodes_f); 
-                    Vf              = GEOM.Ve(jelement);
+                    Vf               = GEOM.Ve(jelement,2);
                     rho_f            = properties_f(1);
                
                 %ii: Calculate embedded element mass
@@ -66,15 +69,15 @@ for ii=1:length(FEM.mesh.host)
                     
            %***Until I work out removing the embedded nodes as dof, I need to
            %     add them to the mass matrix
-                    %e: divide mass equally among nodes
-                    Meff = (mf/n_nodes_elem);
+                    %e: divide mass equally among embedded nodes
+                    Meff = (mf/n_nodes_elem_f);
 
                     %f: form diagonal mass matrix
-                    Me = eye(n_nodes_elem* ndims,n_nodes_elem* ndims) * Meff;
+                    Me = eye(n_nodes_elem_f* ndims,n_nodes_elem_f* ndims) * Meff;
 
         
                     %g: scatter mass matrix to global 
-                    global_dof = FEM.mesh.dof_nodes(:,global_nodes_f);
+                    global_dof = FEM(2).mesh.dof_nodes(:,global_nodes_f);
                     LumpedMass(global_dof,global_dof) = LumpedMass(global_dof,global_dof) + Me;
 
                     
@@ -98,7 +101,7 @@ for ii=1:length(FEM.mesh.host)
 
         
         %g: transform and scatter scatter mass matrix to global 
-        global_dof = FEM.mesh.dof_nodes(:,global_nodes);
+        global_dof = FEM(1).mesh.dof_nodes(:,global_nodes);
         LumpedMass(global_dof,global_dof) = LumpedMass(global_dof,global_dof) + Me;
         
         

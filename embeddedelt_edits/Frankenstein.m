@@ -1,11 +1,12 @@
 %A bunch of pieces of flagshyp smashed together so I can actually figure
 %out what all of the variables are. This may be a disaster
 clear; clc; close all; 
-inputfile='explicit_embedded3D_new.dat';
+% inputfile='explicit_embedded3D_new.dat';
 % inputfile='explicit_embedded_4elt_new.dat';
 % inputfile='explicit_3D.dat';
-inputfile='seperate_embedded.dat';
+% inputfile='seperate_embedded.dat';
 % inputfile='seperate.dat';
+inputfile='explicit_embedded_truss.dat';
 basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
 simtime = 0.01;
 outputfreq=2;
@@ -56,14 +57,12 @@ tic
         % Obtain quadrature rules, isoparametric shape functions and their  
         % derivatives for the internal and boundary elements.
         %--------------------------------------------------------------------------
-        switch FEM.mesh.element_type
-            case 'truss2'
-              FEM.interpolation.element = [];
-              FEM.interpolation.boundary = [];
-            otherwise
-              QUADRATURE.element = element_quadrature_rules(FEM.mesh.element_type);
-              QUADRATURE.boundary = edge_quadrature_rules(FEM.mesh.element_type);
-              FEM = shape_functions_iso_derivs(QUADRATURE,FEM,GEOM.ndime);
+        for i = 1:FEM(1).n_elet_type
+              QUADRATURE(i).element = element_quadrature_rules(FEM(i).mesh.element_type);
+              QUADRATURE(i).boundary = edge_quadrature_rules(FEM(i).mesh.element_type);
+
+              FEM(i).interpolation = [];
+              FEM(i) = shape_functions_iso_derivs(QUADRATURE(i),FEM(i),GEOM.ndime);
         end
         %--------------------------------------------------------------------------
         % Read the number of mesh nodes, nodal coordinates and boundary conditions.  
@@ -72,20 +71,28 @@ tic
         %--------------------------------------------------------------------------
         % Read the number of elements, element connectivity and material number.
         %--------------------------------------------------------------------------
-        [FEM,MAT] = inelems(FEM,fid);
+        GEOM.total_n_elets = 0;
+        for i = 1:FEM(1).n_elet_type
+            [FEM(i),MATA(i)] = inelems(FEM(i) ,fid);
+            GEOM.total_n_elets = GEOM.total_n_elets + FEM(i).mesh.nelem;
+        end
         %--------------------------------------------------------------------------
         % Obtain fixed and free degree of freedom numbers (dofs).
         %--------------------------------------------------------------------------
-        BC = find_fixed_free_dofs(GEOM,FEM,BC);
+        BC = find_fixed_free_dofs(GEOM,FEM(1),BC);
         %--------------------------------------------------------------------------
         % Read the number of materials and material properties.  
         %--------------------------------------------------------------------------
-        MAT = matprop(MAT,FEM,fid); 
+        for i = 1:FEM(1).n_elet_type
+            MAT(i) = matprop(MATA(i),FEM(i),fid); %It didn't like returning such a 
+                         %new looking MAT structure so MATA is a temp variable
+        end
+        clear MATA;
         %--------------------------------------------------------------------------
         % Read nodal point loads, prescribed displacements, surface pressure loads
         % and gravity (details in textbook).
         %--------------------------------------------------------------------------
-        [LOAD,BC,FEM,GLOBAL] = inloads(GEOM,FEM,BC,fid);
+        [LOAD,BC,FEM(1),GLOBAL] = inloads(GEOM,FEM(1),BC,fid);
         %--------------------------------------------------------------------------
         % Read control parameters.
         %--------------------------------------------------------------------------
@@ -106,8 +113,10 @@ tic
     % Initialises kinematic variables and compute initial tangent matrix 
     % and equivalent force vector, excluding pressure component.
     %----------------------------------------------------------------------
+    
     [GEOM,LOAD,GLOBAL,PLAST,KINEMATICS] = ...
-     initialisation(FEM,GEOM,QUADRATURE,MAT,LOAD,CONSTANT,CON,GLOBAL,BC);                                           
+     initialisation(FEM,GEOM,QUADRATURE,MAT,LOAD,CONSTANT,CON,GLOBAL,BC);   
+    
     %----------------------------------------------------------------------
     % |-/
     GLOBAL.external_load_effective = GLOBAL.external_load;
@@ -141,23 +150,21 @@ CON.incrm = 0;
 %step 3 - compute accelerations.
 GLOBAL.accelerations = inv(GLOBAL.M)*(GLOBAL.external_load_effective - GLOBAL.T_int);
 
-velocities_half = zeros(FEM.mesh.n_dofs,1);
-disp_n = zeros(FEM.mesh.n_dofs,1);
-disp_prev = zeros(FEM.mesh.n_dofs,1);
+velocities_half = zeros(FEM(1).mesh.n_dofs,1);
+disp_n = zeros(FEM(1).mesh.n_dofs,1);
+disp_prev = zeros(FEM(1).mesh.n_dofs,1);
 
 %step 4 - time update/iterations
 Time = 0; 
 tMax = simtime; % in seconds
 prefactor = 0.8;
-dt= prefactor * CalculateTimeStep(PRO,FEM,GEOM,CON,BC,GLOBAL,MAT,DAMPING); % in seconds
+dt= prefactor * CalculateTimeStep(FEM(1),GEOM,MAT(1),DAMPING); % in seconds
 plot_counter  = 0;
 time_step_counter = 0;
 plot_counter = 0;
 nPlotSteps = 20 ;
 nSteps = round(tMax/dt);
 nsteps_plot = round(nSteps/nPlotSteps);
-
-testfid = fopen('AVD_Check.txt','w');
 
 % start explicit loop
 while(Time<=tMax)
@@ -212,9 +219,9 @@ while(Time<=tMax)
        disp_n(BC.fixdof) = GEOM.x(BC.fixdof) - GEOM.x0(BC.fixdof);  
 %      |-/
 %      Update coodinates of embedded nodes (if there are any)  
-          if ~isempty(FEM.mesh.embedded)
+          if ~isempty(FEM(1).mesh.embedded) || ~isempty(FEM(2).mesh.embedded)
               [GEOM.x,velocities_half, GLOBAL.accelerations ] = update_embedded_displacements_explicit(BC.tiedof, BC.tienodes,...
-                    FEM.mesh,GEOM, velocities_half, GLOBAL.accelerations); 
+                    FEM,GEOM, velocities_half, GLOBAL.accelerations); 
               disp_n(BC.tiedof) = GEOM.x(BC.tiedof) - GEOM.x0(BC.tiedof);
           end
 
@@ -242,7 +249,7 @@ while(Time<=tMax)
       
   % updated stable time increment based on current deformation     
   dt_old=dt;
-  dt = prefactor * CalculateTimeStep(PRO,FEM,GEOM,CON,BC,GLOBAL,MAT,DAMPING);
+  dt = prefactor * CalculateTimeStep(FEM(1),GEOM,MAT(1),DAMPING);
   
 %step 9 - compute accelerations.       
   AccOld = GLOBAL.accelerations;
@@ -254,9 +261,9 @@ while(Time<=tMax)
   
 %      |-/
 %      Update v/a of embedded nodes (if there are any)  
-          if ~isempty(FEM.mesh.embedded)
+          if ~isempty(FEM(1).mesh.embedded) || ~isempty(FEM(2).mesh.embedded)
               [GEOM.x,GLOBAL.velocities, GLOBAL.accelerations ] = update_embedded_displacements_explicit(BC.tiedof, BC.tienodes,...
-                    FEM.mesh,GEOM, GLOBAL.velocities, GLOBAL.accelerations); 
+                    FEM,GEOM, GLOBAL.velocities, GLOBAL.accelerations); 
                disp_n(BC.tiedof) = GEOM.x(BC.tiedof) - GEOM.x0(BC.tiedof);
           end
   
@@ -271,8 +278,8 @@ while(Time<=tMax)
   if( mod(time_step_counter,outputfreq) == 0 )
       plot_counter = plot_counter +1;
       
-      output(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE.element,CONSTANT,KINEMATICS);
-      output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE.element,CONSTANT,KINEMATICS);
+      output(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS);
+%       output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE.element,CONSTANT,KINEMATICS);
 
 %       PLAST = save_output(updated_PLAST,PRO,FEM,GEOM,QUADRATURE,BC,...
 %                 MAT,LOAD,CON,CONSTANT,GLOBAL,PLAST,KINEMATICS);  
@@ -288,72 +295,12 @@ while(Time<=tMax)
     disp(['step = ',sprintf('%d', time_step_counter-1),'     time = ',... 
   sprintf('%.2e', t_n), ' sec.     dt = ', sprintf('%.2e', dt_old) ,...
   ' sec.'])
-
-
-%     fprintf(testfid, '\nstep = %d     time = %.2e     dt = %.2e\n',time_step_counter-1,t_n,dt_old);
   end
 
 formt = [repmat('% -1.4E ',1,3) '\n'];
-% fprintf(testfid,'T_int\n');
-% for i=1:FEM.mesh.n_dofs/3
-%     switch i
-%         case {1 3 4 6 7 10 15 18}
-%             fprintf(testfid,'% -1.4E \n', GLOBAL.T_int(i));
-%         otherwise
-%             fprintf(testfid,'     % -1.4E \n', GLOBAL.T_int(i));
-%     end
-% end
-if mod(time_step_counter,outputfreq)==0
-fprintf(testfid,'Acc\n');
-for i=1:3:FEM.mesh.n_dofs
-    fprintf(testfid,formt, AccOld(i:i+2));
-end
-fprintf(testfid,'Acc n\n');
-for i=1:3:FEM.mesh.n_dofs
-    fprintf(testfid,formt, GLOBAL.accelerations(i:i+2));
-end
-fprintf(testfid,'Vel\n');
-for i=1:3:FEM.mesh.n_dofs
-    fprintf(testfid,formt, VelOld(i:i+2));
-end
-% fprintf(testfid,"\nGlobalForce:\n");
-%     for i=1:3:FEM.mesh.n_dofs
-%         fprintf(testfid,formt, GLOBAL.T_int(i:i+2));
-%     end
-%     fprintf(testfid,'\n');
-% fprintf(testfid,'Displacment\n');
-% for i=1:FEM.mesh.n_dofs/3
-%     fprintf(testfid,formt, GEOM.x(:,i)-GEOM.x0(:,i));
-% end
-% fprintf(testfid,'GEOM.x\n');
-% for i=1:8
-%     fprintf(testfid,formt, GEOM.x(:,i));
-% end
 
-
-%   if mod(time_step_counter,outputfreq)==0
-%     fprintf(testfid,'Displacment\n');
-%     for i=1:FEM.mesh.n_dofs/3
-%         fprintf(testfid,formt, GEOM.x(:,i)-GEOM.x0(:,i));
-%     end
-%   end
-end 
 end % end on while loop
-
-fprintf(testfid,'Acc n\n');
-for i=1:3:FEM.mesh.n_dofs
-    fprintf(testfid,formt, GLOBAL.accelerations(i:i+2));
-end
-fprintf(testfid,'Vel\n');
-for i=1:3:FEM.mesh.n_dofs
-    fprintf(testfid,formt, VelOld(i:i+2));
-end
-fprintf(testfid,'Displacment\n');
-for i=1:FEM.mesh.n_dofs/3
-    fprintf(testfid,formt, GEOM.x(:,i)-GEOM.x0(:,i));
-end
- 
-fclose(testfid);                       
+                   
 
 fprintf(' Normal end of PROGRAM flagshyp. \n');
 

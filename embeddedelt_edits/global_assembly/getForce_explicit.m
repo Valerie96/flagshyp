@@ -13,8 +13,8 @@ updated_PLAST = PLAST;
 %--------------------------------------------------------------------------
 GLOBAL.external_load = xlamb*GLOBAL.nominal_external_load;
 
-Jn_1_vec=ones(FEM.mesh.nelem,1);
-VolRate_vec=zeros(FEM.mesh.nelem,QUADRATURE.element.ngauss);
+Jn_1_vec=ones(FEM(1).mesh.nelem,1);
+VolRate_vec=zeros(FEM(1).mesh.nelem,QUADRATURE(1).element.ngauss);
 
 
 
@@ -25,15 +25,15 @@ counter          = 1;
 % Main element loop.
 %--------------------------------------------------------------------------
 % for ielement=1:FEM.mesh.nelem
-for ii=1:length(FEM.mesh.host)
-    ielement=FEM.mesh.host(ii);
+for ii=1:FEM(1).mesh.nelem
+    ielement=ii;
     %----------------------------------------------------------------------
     % GATHER Temporary variables associated with a particular element.
     %----------------------------------------------------------------------
-    global_nodes    = FEM.mesh.connectivity(:,ielement);   
-    material_number = MAT.matno(ielement);     
-    matyp           = MAT.matyp(material_number);        
-    properties      = MAT.props(:,material_number); 
+    global_nodes    = FEM(1).mesh.connectivity(:,ielement);   
+    material_number = MAT(1).matno(ielement);     
+    matyp           = MAT(1).matyp(material_number);        
+    properties      = MAT(1).props(:,material_number); 
     xlocal          = GEOM.x(:,global_nodes);                     
     x0local         = GEOM.x0(:,global_nodes);                       
     Ve              = GEOM.Ve(ielement);      
@@ -44,20 +44,20 @@ for ii=1:length(FEM.mesh.host)
     %----------------------------------------------------------------------
     % Select internal variables within the element (plasticity).
     %----------------------------------------------------------------------
-    PLAST_element = selecting_internal_variables_element(PLAST,matyp,ielement);    
+    PLAST_element = selecting_internal_variables_element(PLAST(1),matyp,ielement);    
     %----------------------------------------------------------------------
     % Compute internal force and stiffness matrix for an element.
     %----------------------------------------------------------------------    
-    switch FEM.mesh.element_type
+    switch FEM(1).mesh.element_type
       case 'truss2'
        [T_internal,indexi,indexj,global_stiffness,counter,PLAST_element] = ...
         element_force_and_stiffness_truss(properties,xlocal,x0local,...
-        global_nodes,FEM,PLAST_element,counter,indexi,indexj,...
+        global_nodes,FEM(1),PLAST_element,counter,indexi,indexj,...
         global_stiffness,GEOM);
       otherwise
        [T_internal,counter,PLAST_element,Jn_1,VolRate] = ...
         InternalForce_explicit(ielement,FEM,xlocal,x0local,global_nodes,...
-        Ve,QUADRATURE.element,properties,CONSTANT,GEOM,matyp,PLAST_element,...
+        Ve,QUADRATURE,properties,CONSTANT,GEOM,matyp,PLAST_element,...
         counter,KINEMATICS,MAT,DAMPING,dt);
         
         Jn_1_vec(ielement) = Jn_1;
@@ -74,7 +74,7 @@ for ii=1:length(FEM.mesh.host)
     % Assemble element contribution into global internal force vector.   
     %----------------------------------------------------------------------
     Step_globalT_int = force_vectors_assembly(T_internal,global_nodes,...
-                   Step_globalT_int,FEM.mesh.dof_nodes);
+                   Step_globalT_int,FEM(1).mesh.dof_nodes);
                
 %    fprintf("\nStep_globalT_int:\n");
 %     for i=1:3:48

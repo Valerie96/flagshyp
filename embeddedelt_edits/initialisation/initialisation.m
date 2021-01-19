@@ -7,55 +7,85 @@ function [GEOM,LOAD,GLOBAL,PLAST,KINEMATICS] = ...
 %--------------------------------------------------------------------------    
 % Initialisation of internal variables for plasticity.
 %--------------------------------------------------------------------------    
-check = (isempty((MAT.matyp(MAT.matyp==17)))*isempty((MAT.matyp(MAT.matyp==2))));
-if check  
-   PLAST = [];
-else 
-   switch FEM.mesh.element_type
-       case 'truss2'
-            PLAST.ep    = zeros(FEM.mesh.nelem,1);  
-            PLAST.epbar = zeros(FEM.mesh.nelem,1);  
-       otherwise
-            PLAST.epbar = zeros(QUADRATURE.element.ngauss,FEM.mesh.nelem,1);       
-            PLAST.invCp = reshape(repmat(eye(GEOM.ndime),1,...
-                          QUADRATURE.element.ngauss*FEM.mesh.nelem),...
-                          GEOM.ndime,GEOM.ndime,QUADRATURE.element.ngauss,...
-                          FEM.mesh.nelem); 
-   end                                        
+
+%|-/ 
+GEOM.element_num = zeros(3,GEOM.total_n_elets); nel=0;
+%|-/
+
+for i = 1:FEM(1).n_elet_type
+check = (isempty((MAT(i).matyp(MAT(i).matyp==17)))*isempty((MAT(i).matyp(MAT(i).matyp==2))));
+
+    if check  
+       PLAST = [];
+    else 
+   
+       switch FEM(i).mesh.element_type
+           case 'truss2'
+                PLAST(i).ep    = zeros(FEM(i).mesh.nelem,1);  
+                PLAST(i).epbar = zeros(FEM(i).mesh.nelem,1);  
+           otherwise
+                PLAST(i).epbar = zeros(QUADRATURE(i).element.ngauss,FEM(i).mesh.nelem,1);       
+                PLAST(i).invCp = reshape(repmat(eye(GEOM.ndime),1,...
+                              QUADRATURE(i).element.ngauss*FEM(i).mesh.nelem),...
+                              GEOM.ndime,GEOM.ndime,QUADRATURE(i).element.ngauss,...
+                              FEM(i).mesh.nelem); 
+       end
+    end
+    
+    %Initialisation of kinematics. 
+    %--------------------------------------------------------------------------
+    KINEMATICS(i) = kinematics_initialisation(GEOM,FEM(i),QUADRATURE(i).element);
+    %--------------------------------------------------------------------------
+    
+    %--------------------------------------------------------------------------
+    %Assign global element numbers to all elements.
+    %   Store global #, type, embedded code 
+    %   Global number assignments will be needed when looping through all
+    %   elements (maybe, I might be wrong)
+    %--------------------------------------------------------------------------
+    Global_nums = [nel+1: nel+FEM(i).mesh.nelem];
+    GEOM.element_num(1, Global_nums) = 1:FEM(i).mesh.nelem;     %Global Element Numbers
+    GEOM.element_num(2, Global_nums) = ones(length(Global_nums)) * i; %Global Element Material specification
+    GEOM.element_num(3, Global_nums) = FEM(i).mesh.embedcode;
+    
+    nel = nel + Global_nums(end);
+    %--------------------------------------------------------------------------
+
 end
 %--------------------------------------------------------------------------    
 % Initialise undeformed geometry and initial residual and external forces. 
 %--------------------------------------------------------------------------    
+mesh_dof = FEM(1).mesh.n_dofs;
+
 GEOM.x0              = GEOM.x;
-GLOBAL.Residual      = zeros(FEM.mesh.n_dofs,1);
-GLOBAL.external_load = zeros(FEM.mesh.n_dofs,1);
-GLOBAL.Reactions      = zeros(FEM.mesh.n_dofs,1);
+GLOBAL.Residual      = zeros(mesh_dof,1);
+GLOBAL.external_load = zeros(mesh_dof,1);
+GLOBAL.Reactions      = zeros(mesh_dof,1);
+
+
 
 global explicit  % needs to be defined in order for explicit to be global
 % Define velocity and accelerations for explicit method;
 if (explicit == 1)
    % GLOBAL.velocities = zeros(GEOM.npoin,GEOM.ndime);
    % GLOBAL.accelerations = zeros(GEOM.npoin,GEOM.ndime);
-    GLOBAL.velocities = zeros(FEM.mesh.n_dofs,1);
-    GLOBAL.accelerations = zeros(FEM.mesh.n_dofs,1);
-    GEOM.Jn_1 = ones(FEM.mesh.nelem,1);
-    GEOM.VolRate = zeros(FEM.mesh.nelem,1);
+    GLOBAL.velocities = zeros(mesh_dof,1);
+    GLOBAL.accelerations = zeros(mesh_dof,1);
+    GEOM.Jn_1 = ones(mesh_dof,1);
+    GEOM.VolRate = zeros(mesh_dof,1);
 end
 
-%--------------------------------------------------------------------------    
-% Initialisation of kinematics. 
-%--------------------------------------------------------------------------
-KINEMATICS = kinematics_initialisation(GEOM,FEM,QUADRATURE.element);
-%--------------------------------------------------------------------------    
+%--------------------------------------------------------------------------       
 % Calculate initial volume for data checking. 
 % Additionally, essential for mean dilation algorithm.
 %--------------------------------------------------------------------------
-GEOM = initial_volume(FEM,GEOM,QUADRATURE.element,MAT,KINEMATICS);
+GEOM = initial_volume(FEM,GEOM,QUADRATURE,MAT,KINEMATICS);
 %--------------------------------------------------------------------------    
 % Compute the external force vector contribution due to gravity 
 % (nominal value prior to load increment). 
 %--------------------------------------------------------------------------    
 if norm(LOAD.gravt)>0
+    fprintf("gravity doesn't work yet\n");
    GLOBAL = gravity_vector_assembly(GEOM,FEM,QUADRATURE.element,LOAD,...
                                     MAT,GLOBAL,KINEMATICS);     
 end
@@ -63,32 +93,42 @@ end
 % Initialise external force vector contribution due to pressure
 % (nominal value prior to load increment).
 %--------------------------------------------------------------------------    
-GLOBAL.nominal_pressure = zeros(FEM.mesh.n_dofs,1);
+% GLOBAL.nominal_pressure = zeros(FEM.mesh.n_dofs,1);
 %--------------------------------------------------------------------------    
 % Computes and assembles the initial tangent matrix and the initial  
 % residual vector due to the internal contributions 
 % (external contributions will be added later on). 
-%--------------------------------------------------------------------------  
-[GLOBAL,PLAST] = residual_and_stiffness_assembly(CON.xlamb,GEOM,MAT,FEM,GLOBAL,...
-                                                 CONSTANT,QUADRATURE.element,PLAST,KINEMATICS); 
+%-------------------------------------------------------------------------- 
+
+
                                              
                                              
 if(explicit ==1)
-    if ~isempty(FEM.mesh.embedded)
+    %For now, assume no initial internal forces
+%     [GLOBAL,PLAST] = residual_assembly_explicit(CON.xlamb,GEOM,MAT,FEM,GLOBAL,...
+%                                                  CONSTANT,QUADRATURE.element,PLAST,KINEMATICS); 
+    GLOBAL.external_load = CON.xlamb*GLOBAL.nominal_external_load;
+    GLOBAL.T_int     = zeros(FEM(1).mesh.n_dofs,1);
+    GLOBAL.Residual = GLOBAL.T_int - GLOBAL.external_load;
+
+    if ~isempty(FEM(1).mesh.embedded) || ~isempty(FEM(2).mesh.embedded)
         GEOM = inverse_mapping(GEOM,FEM,BC.tienodes);
-        [GLOBAL] = effective_mass_assembly(GEOM,MAT,FEM,GLOBAL,QUADRATURE.element);
+        [GLOBAL] = effective_mass_assembly(GEOM,MAT,FEM,GLOBAL,QUADRATURE);
 
 
     else
         GEOM.embedded.NodeHost    = zeros(GEOM.npoin,1);
-        GEOM.embedded.ElementHost = zeros(FEM.mesh.nelem,8);
-        GEOM.embedded.HostTotals  = zeros(FEM.mesh.nelem,2);
+        GEOM.embedded.ElementHost = zeros(FEM(1).mesh.nelem,8);
+        GEOM.embedded.HostTotals  = zeros(FEM(1).mesh.nelem,2);
         GEOM.embedded.Embed_Zeta  = zeros(3, GEOM.npoin);
         
         [GLOBAL] = mass_assembly(CON.xlamb,GEOM,MAT,FEM,GLOBAL,...
                           CONSTANT,QUADRATURE.element,PLAST,KINEMATICS);
                       
     end
+else
+    [GLOBAL,PLAST] = residual_and_stiffness_assembly(CON.xlamb,GEOM,MAT,FEM,GLOBAL,...
+                                                 CONSTANT,QUADRATURE.element,PLAST,KINEMATICS); 
 end 
 
         
