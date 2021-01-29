@@ -1,4 +1,4 @@
-function plot_lnV(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
+function plot_lnV(GEOM,FEM,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
 
 space = '   ';
 
@@ -25,40 +25,56 @@ elseif GEOM.ndime == 3
     fprintf(fid3,'ComponentName8="zz" ');    
     fprintf(fid3,'format="ascii">\n');
 end
-for ielement=1:FEM.mesh.nelem  
+
+for nt = 1:FEM(1).n_elet_type 
+for ielement=1:FEM(nt).mesh.nelem  
 
     %----------------------------------------------------------------------
     % Temporary variables associated with a particular element
     % ready for stress outpue calculation.
     %----------------------------------------------------------------------
-    global_nodes    = FEM.mesh.connectivity(:,ielement); 
-    material_number = MAT.matno(ielement);               
-    matyp           = MAT.matyp(material_number);        
-    properties      = MAT.props(:,material_number);      
+    global_nodes    = FEM(nt).mesh.connectivity(:,ielement); 
+    material_number = MAT(nt).matno(ielement);               
+    matyp           = MAT(nt).matyp(material_number);        
+    properties      = MAT(nt).props(:,material_number);      
     xlocal          = GEOM.x(:,global_nodes);            
     x0local         = GEOM.x0(:,global_nodes);               
-    Ve              = GEOM.Ve(ielement);                 
-    %----------------------------------------------------------------------
-    % Select internal variables within the element (PLAST).
-    %----------------------------------------------------------------------
-    PLAST_element = selecting_internal_variables_element(PLAST,matyp,ielement);    
-    %----------------------------------------------------------------------
-    % Compute stresses at Gauss point level.
-    %----------------------------------------------------------------------
-    Stress = stress_output(GEOM.ndime,PLAST_element,matyp,Ve,xlocal,x0local,...
-                           properties,QUADRATURE,CONSTANT,FEM,KINEMATICS,GEOM);    
+    Ve              = GEOM.Ve(ielement,nt);               
+    %----------------------------------------------------------------------   
 
-    KINEMATICS = gradients(xlocal,x0local,FEM.interpolation.element.DN_chi,...
-                          QUADRATURE,KINEMATICS)  ;     
+     if strcmp(FEM(nt).mesh.element_type,'truss2')
+        L       = norm(x0local(:,2) - x0local(:,1));  
+        dx      = xlocal(:,2) - xlocal(:,1);        
+        l       = norm(dx);                            
+        LE      = log(l/L);
+        
+        if GEOM.ndime == 2
+            fprintf(fid3,'%s%s%s%s%s%.10e %.10e ',space,space,space,space,space,...
+                   LE,0);
+           fprintf(fid3,'%.10e %.10e\n',0,0);
+
+        elseif GEOM.ndime == 3
+           fprintf(fid3,'%s%s%s%s%s%.5e %.5e %.5e ',space,space,space,space,space,...
+                   LE,0,0);
+           fprintf(fid3,'%.5e %.5e %.5e ', 0,0,0);
+           fprintf(fid3,'%.5e %.5e %.5e\n',0,0,0);
+        end
+        
+        fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space); 
+       return
+     end
+    
+    KINEMATICS(nt) = gradients(xlocal,x0local,FEM(nt).interpolation.element.DN_chi,...
+                          QUADRATURE(nt).element,KINEMATICS(nt))  ;     
     %KINEMATICS.F
     F_avg_over_gauss_pts=zeros(GEOM.ndime,GEOM.ndime);
-    for igauss=1:QUADRATURE.ngauss 
-         kinematics_gauss = kinematics_gauss_point(KINEMATICS,igauss);
+    for igauss=1:QUADRATURE(nt).element.ngauss 
+         kinematics_gauss = kinematics_gauss_point(KINEMATICS(nt),igauss);
          F_avg_over_gauss_pts= F_avg_over_gauss_pts+ kinematics_gauss.F;
          % KINEMATICS.F
     end
     % compute average F (over gauss points)
-    F_avg_over_gauss_pts= F_avg_over_gauss_pts/QUADRATURE.ngauss;
+    F_avg_over_gauss_pts= F_avg_over_gauss_pts/QUADRATURE(nt).element.ngauss;
   
     %KINEMATICS.b;
     b_avg = F_avg_over_gauss_pts * F_avg_over_gauss_pts';
@@ -70,8 +86,9 @@ for ielement=1:FEM.mesh.nelem
 
     
     % take care of ln(0) = -Inf 
-    if FEM.mesh.element_type == 'quad4'
-       if QUADRATURE.ngauss == 4 % the 2 is b/c it is the largest e-value from matlab 
+    switch FEM(nt).mesh.element_type 
+       case 'quad4'
+       if QUADRATURE(nt).element.ngauss == 4 % the 2 is b/c it is the largest e-value from matlab 
            V=  sqrt(b_e_values(1,1))*b_e_vectors(:,1)*b_e_vectors(:,1)'+ ...
                sqrt(b_e_values(2,2))*b_e_vectors(:,2)*b_e_vectors(:,2)';
            
@@ -89,8 +106,8 @@ for ielement=1:FEM.mesh.nelem
 %                lnV(2,1)=0;
 %            end
        end
-    elseif FEM.mesh.element_type == 'hexa8'
-       if QUADRATURE.ngauss == 8 % the 3 is b/c it is the largest e-value from matlab 
+        case 'hexa8'
+       if QUADRATURE(nt).element.ngauss == 8 % the 3 is b/c it is the largest e-value from matlab 
           V=  sqrt(b_e_values(1,1))*b_e_vectors(:,1)*b_e_vectors(:,1)'+ ...
               sqrt(b_e_values(2,2))*b_e_vectors(:,2)*b_e_vectors(:,2)'+ ...
               sqrt(b_e_values(3,3))*b_e_vectors(:,3)*b_e_vectors(:,3)';
@@ -131,30 +148,22 @@ for ielement=1:FEM.mesh.nelem
     %----------------------------------------------------------------------
     % Print Logrithmic Strain.
     %----------------------------------------------------------------------   
-    if FEM.mesh.element_type == 'quad4'
-       if QUADRATURE.ngauss == 4
+    switch FEM(nt).mesh.element_type 
+        case'quad4'
+       if QUADRATURE(nt).element.ngauss == 4
            fprintf(fid3,'%s%s%s%s%s%.10e %.10e %.10e %.10e \n',space,space,space,space,space,...
                    lnV(1,1),lnV(1,2), lnV(2,1),lnV(2,2));
            %fprintf(fid3,'%.10e %.10e\n',Green_Strain_Avg(2,1),Green_Strain_Avg(2,2));
        end
-    elseif FEM.mesh.element_type == 'hexa8'
-       if QUADRATURE.ngauss == 8
+        case 'hexa8'
+       if QUADRATURE(nt).element.ngauss == 8
            fprintf(fid3,'%s%s%s%s%s%.10e %.10e %.10e %.10e  %.10e %.10e %.10e  %.10e %.10e\n',space,space,space,space,space,...
                    lnV(1,1),lnV(1,2), lnV(1,3),lnV(2,1),lnV(2,2), lnV(2,3),lnV(3,1), lnV(3,2),lnV(3,3)); 
        end
     end
-    
-    fidx=fopen('LE.txt','a+');
-    fprintf(fidx, 'Elt %d\n',ielement);
-    fprintf(fidx,' %.10e %.10e %.10e \n %.10e %.10e %.10e \n %.10e %.10e %.10e\n \n',...
-                   lnV(1,1),lnV(1,2), lnV(1,3),lnV(2,1),lnV(2,2), lnV(2,3),lnV(3,1), lnV(3,2),lnV(3,3)); 
-    fclose(fidx);
 
-%                    fprintf(' %.10e %.10e %.10e \n %.10e %.10e %.10e \n %.10e %.10e %.10e\n',...
-%                    lnV(1,1),lnV(1,2), lnV(1,3),lnV(2,1),lnV(2,2), lnV(2,3),lnV(3,1), lnV(3,2),lnV(3,3)); 
- 
 end
- 
+end
 fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space); 
 
 

@@ -41,7 +41,7 @@ fprintf(fid3,'<?xml version="1.0"?>\n');
 fprintf(fid3,'<VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian">\n');
 fprintf(fid3,'%s<UnstructuredGrid>\n',space);
 fprintf(fid3,'%s%s<Piece NumberOfPoints="%d" NumberOfCells="%d">\n',...
-    space,space,GEOM.npoin, FEM.mesh.nelem);
+    space,space,GEOM.npoin, GEOM.total_n_elets);
 
 %--------------------------------------------------------------------------
 % Print boundary codes, coordinates, reactions and external loads.
@@ -50,7 +50,7 @@ fprintf(fid3,'%s%s<Piece NumberOfPoints="%d" NumberOfCells="%d">\n',...
 info2                      =  zeros(GEOM.npoin,2 + 2*GEOM.ndime);
 info2(:,1)                 =  (1:GEOM.npoin)';
 info2(:,2)                 =  BC.icode;
-aux2                       =  zeros(FEM.mesh.n_dofs,1);
+aux2                       =  zeros(FEM(1).mesh.n_dofs,1);
 aux2                       =  reshape(aux2,GEOM.ndime,[]);
 info2(:,3:end)             =  [GEOM.x0'  aux2'];
 
@@ -58,7 +58,7 @@ info2(:,3:end)             =  [GEOM.x0'  aux2'];
 info3                      =  zeros(GEOM.npoin,2 + 2*GEOM.ndime);
 info3(:,1)                 =  (1:GEOM.npoin)';
 info3(:,2)                 =  BC.icode;
-aux                       =  zeros(FEM.mesh.n_dofs,1);
+aux                       =  zeros(FEM(1).mesh.n_dofs,1);
 aux(BC.fixdof)            =  GLOBAL.Reactions(BC.fixdof);
 aux(BC.freedof)           =  GLOBAL.external_load(BC.freedof);
 aux                       =  reshape(aux,GEOM.ndime,[]);
@@ -79,65 +79,87 @@ for i = 1:GEOM.npoin
 end
 fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space);
 fprintf(fid3,'%s%s%s</Points>\n',space,space,space);
+
 %--------------------------------------------------------------------------
 % Print material type and connectivities.
 %--------------------------------------------------------------------------
 % fprintf(fid,'%d',FEM.mesh.nelem);
 
+    fprintf(fid3,'%s%s%s<Cells>\n',space,space,space);
 
-%fprintf(fid3,'CELLS %d %d\n',FEM.mesh.nelem,FEM.mesh.nelem*(4+1) );
+    fprintf(fid3,'%s%s%s%s<DataArray type="Int32" Name="connectivity" format="ascii">\n',....
+        space,space,space,space);
+    
+ for nt = 1:FEM(1).n_elet_type   
+    % fprintf(fid,'\n');
+    info                      =  zeros(FEM(nt).mesh.nelem,2+FEM(nt).mesh.n_nodes_elem);
+    info(:,1)                 =  (1:FEM(nt).mesh.nelem)';
+    info(:,2)                 =  MAT(nt).matno;
+    info(:,3:end)             =  FEM(nt).mesh.connectivity';
+    % format                    =  ['%d %d ' repmat('%d ',1,FEM.mesh.n_nodes_elem) '\n'];
+    % fprintf(fid,format,info');
 
-% fprintf(fid,'\n');
-info                      =  zeros(FEM.mesh.nelem,2+FEM.mesh.n_nodes_elem);
-info(:,1)                 =  (1:FEM.mesh.nelem)';
-info(:,2)                 =  MAT.matno;
-info(:,3:end)             =  FEM.mesh.connectivity';
-% format                    =  ['%d %d ' repmat('%d ',1,FEM.mesh.n_nodes_elem) '\n'];
-% fprintf(fid,format,info');
+    
 
-fprintf(fid3,'%s%s%s<Cells>\n',space,space,space);
-
-fprintf(fid3,'%s%s%s%s<DataArray type="Int32" Name="connectivity" format="ascii">\n',....
-    space,space,space,space);
-
-if FEM.mesh.element_type == 'quad4'
-    for i = 1:FEM.mesh.nelem
-        fprintf(fid3,'%s%s%s%s%s%d %d %d %d\n',space,space,space,space,space,info(i,3)-1,info(i,4)-1,...
-        info(i,5)-1,info(i,6)-1 );
+    switch FEM(nt).mesh.element_type
+        case 'quad4'
+            for i = 1:FEM(nt).mesh.nelem
+                fprintf(fid3,'%s%s%s%s%s%d %d %d %d\n',space,space,space,space,space,info(i,3)-1,info(i,4)-1,...
+                info(i,5)-1,info(i,6)-1 );
+            end
+        case'hexa8'
+            for i = 1:FEM(nt).mesh.nelem
+                fprintf(fid3,'%s%s%s%s%s%d %d %d %d %d %d %d %d\n',space,space,space,space,space,...
+                    info(i,3)-1,info(i,4)-1,info(i,5)-1,info(i,6)-1,...
+                    info(i,7)-1,info(i,8)-1,info(i,9)-1,info(i,10)-1);
+            end
+        case'truss2'
+            for i = 1:FEM(nt).mesh.nelem
+                fprintf(fid3,'%s%s%s%s%s%d %d\n',space,space,space,space,space,info(i,3)-1,info(i,4)-1);
+            end
     end
-elseif FEM.mesh.element_type == 'hexa8'
-    for i = 1:FEM.mesh.nelem
-        fprintf(fid3,'%s%s%s%s%s%d %d %d %d %d %d %d %d\n',space,space,space,space,space,...
-            info(i,3)-1,info(i,4)-1,info(i,5)-1,info(i,6)-1,...
-            info(i,7)-1,info(i,8)-1,info(i,9)-1,info(i,10)-1);
+end
+
+    fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space);
+
+    fprintf(fid3,'%s%s%s%s<DataArray type="Int32" Name="offsets" format="ascii">\n',....
+        space,space,space,space);
+    
+    for nt = 1:FEM(1).n_elet_type
+        for i = 1:FEM(nt).mesh.nelem
+            switch FEM(nt).mesh.element_type
+                case 'quad4'
+                fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,i*FEM(nt).mesh.n_nodes_elem);  % element type = quad
+                case 'hexa8'
+                fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,i*FEM(nt).mesh.n_nodes_elem);  % element type = hex
+                case 'truss2'
+                fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,10);  % element type = truss
+            end
+        end
+%             fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,i*FEM(nt).mesh.n_nodes_elem);
     end
-end
 
-fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space);
-
+    fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space);
 
 
+    fprintf(fid3,'%s%s%s%s<DataArray type="UInt8" Name="types" format="ascii">\n',...
+       space,space,space,space);
+    %fprintf(fid3,'CELL_TYPES %d\n',FEM.mesh.nelem);
+    for nt = 1:FEM(1).n_elet_type
+        for i = 1:FEM(nt).mesh.nelem
+            switch FEM(nt).mesh.element_type
+                case 'quad4'
+                fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,9);  % element type = quad
+                case 'hexa8'
+                fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,12);  % element type = hex
+                case 'truss2'
+                fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,3);  % element type = truss
+            end
+        end
+    end
+    fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space);
+    fprintf(fid3,'%s%s%s</Cells>\n',space,space,space);
 
-fprintf(fid3,'%s%s%s%s<DataArray type="Int32" Name="offsets" format="ascii">\n',....
-    space,space,space,space);
-for i = 1:FEM.mesh.nelem
-    fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,i*FEM.mesh.n_nodes_elem);
-end
-fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space);
-
-
-fprintf(fid3,'%s%s%s%s<DataArray type="UInt8" Name="types" format="ascii">\n',...
-   space,space,space,space);
-%fprintf(fid3,'CELL_TYPES %d\n',FEM.mesh.nelem);
-for i = 1:FEM.mesh.nelem
-    if FEM.mesh.element_type == 'quad4'
-        fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,9);  % element type = quad
-    elseif FEM.mesh.element_type == 'hexa8'
-        fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,12);  % element type = hex
-    end 
-end
-fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space);
-fprintf(fid3,'%s%s%s</Cells>\n',space,space,space);
 
 %--------------------------------------------------------------------------
 % Print Point/Node Data
@@ -239,17 +261,17 @@ fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space);
 fprintf(fid3,'%s%s%s</PointData>\n',space,space,space);
 
 
-plot_stresses(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
-
-plot_Lagrangian_strain(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
-
-plot_Eulerian_strain(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
-
-plot_lnV(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3);
-
-
-
-
+plot_stresses(GEOM,FEM,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
+% 
+plot_Lagrangian_strain(GEOM,FEM,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
+% 
+plot_Eulerian_strain(GEOM,FEM,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
+% 
+plot_lnV(GEOM,FEM,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3);
+% 
+% 
+% 
+% 
 fprintf(fid3,'%s%s%s</CellData>\n',space,space,space);
 
 
@@ -261,7 +283,7 @@ fprintf(fid3,'%s%s%s</CellData>\n',space,space,space);
 if (~isempty (CON.OUTPUT.nwant) && CON.OUTPUT.nwant~=0)
     increment  = CON.incrm;   
     coordinate = GEOM.x(CON.OUTPUT.iwant,CON.OUTPUT.nwant);
-    Force      = GLOBAL.external_load(FEM.mesh.dof_nodes(CON.OUTPUT.iwant,CON.OUTPUT.nwant));
+    Force      = GLOBAL.external_load(FEM(1).mesh.dof_nodes(CON.OUTPUT.iwant,CON.OUTPUT.nwant));
     xlamb      = CON.xlamb;
     radius     = CON.ARCLEN.arcln;
 %     format     = [repmat('% -1.4E ',1,5) '\n'];

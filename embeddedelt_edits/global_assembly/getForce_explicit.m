@@ -44,7 +44,7 @@ for ii=1:FEM(1).mesh.nelem
     %----------------------------------------------------------------------
     % Select internal variables within the element (plasticity).
     %----------------------------------------------------------------------
-    PLAST_element = selecting_internal_variables_element(PLAST(1),matyp,ielement);    
+    PLAST_element = selecting_internal_variables_element(PLAST,matyp,ielement);    
     %----------------------------------------------------------------------
     % Compute internal force and stiffness matrix for an element.
     %----------------------------------------------------------------------    

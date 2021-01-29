@@ -3,7 +3,7 @@
 clear; clc; close all; 
 % inputfile='explicit_embedded3D_new.dat';
 % inputfile='explicit_embedded_4elt_new.dat';
-% inputfile='explicit_3D.dat';
+inputfile='explicit_3D.dat';
 % inputfile='seperate_embedded.dat';
 % inputfile='seperate.dat';
 inputfile='explicit_embedded_truss.dat';
@@ -16,6 +16,8 @@ DAMPING.b2 = 0; %Quadratic bulk viscosity damping
 ansmlv='y'; 
 global explicit ;
 explicit = 1;
+global EmbedElt;
+EmbedElt = 1;
 tic
 %% Input_data_and_initilaization.m
 
@@ -128,7 +130,7 @@ tic
     save_restart_file(PRO,FEM,GEOM,QUADRATURE,BC,MAT,LOAD,CON,CONSTANT,...
                       GLOBAL,PLAST,KINEMATICS,'internal')    
     %output_vtk(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE.element,CONSTANT,KINEMATICS); 
-%     output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE.element,CONSTANT,KINEMATICS);
+    output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS);
 
 
 %% ExplicitDynamics_algorithm
@@ -219,7 +221,8 @@ while(Time<=tMax)
        disp_n(BC.fixdof) = GEOM.x(BC.fixdof) - GEOM.x0(BC.fixdof);  
 %      |-/
 %      Update coodinates of embedded nodes (if there are any)  
-          if ~isempty(FEM(1).mesh.embedded) || ~isempty(FEM(2).mesh.embedded)
+%           if ~isempty(FEM(1).mesh.embedded) || ~isempty(FEM(2).mesh.embedded)
+          if EmbedElt == 1
               [GEOM.x,velocities_half, GLOBAL.accelerations ] = update_embedded_displacements_explicit(BC.tiedof, BC.tienodes,...
                     FEM,GEOM, velocities_half, GLOBAL.accelerations); 
               disp_n(BC.tiedof) = GEOM.x(BC.tiedof) - GEOM.x0(BC.tiedof);
@@ -261,7 +264,8 @@ while(Time<=tMax)
   
 %      |-/
 %      Update v/a of embedded nodes (if there are any)  
-          if ~isempty(FEM(1).mesh.embedded) || ~isempty(FEM(2).mesh.embedded)
+%           if ~isempty(FEM(1).mesh.embedded) || ~isempty(FEM(2).mesh.embedded)
+          if EmbedElt == 1
               [GEOM.x,GLOBAL.velocities, GLOBAL.accelerations ] = update_embedded_displacements_explicit(BC.tiedof, BC.tienodes,...
                     FEM,GEOM, GLOBAL.velocities, GLOBAL.accelerations); 
                disp_n(BC.tiedof) = GEOM.x(BC.tiedof) - GEOM.x0(BC.tiedof);
@@ -279,7 +283,7 @@ while(Time<=tMax)
       plot_counter = plot_counter +1;
       
       output(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS);
-%       output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE.element,CONSTANT,KINEMATICS);
+      output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS);
 
 %       PLAST = save_output(updated_PLAST,PRO,FEM,GEOM,QUADRATURE,BC,...
 %                 MAT,LOAD,CON,CONSTANT,GLOBAL,PLAST,KINEMATICS);  

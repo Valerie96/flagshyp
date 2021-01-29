@@ -1,4 +1,4 @@
-function plot_stresses(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
+function plot_stresses(GEOM,FEM,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
 
 space = '   ';
 
@@ -27,28 +27,28 @@ elseif GEOM.ndime == 3
     fprintf(fid3,'ComponentName6="pressure" format="ascii">\n');
 end
 
-
-for ielement=1:FEM.mesh.nelem  
+for nt = 1:FEM(1).n_elet_type 
+for ielement=1:FEM(nt).mesh.nelem  
     %----------------------------------------------------------------------
     % Temporary variables associated with a particular element
     % ready for stress outpue calculation.
     %----------------------------------------------------------------------
-    global_nodes    = FEM.mesh.connectivity(:,ielement); 
-    material_number = MAT.matno(ielement);               
-    matyp           = MAT.matyp(material_number);        
-    properties      = MAT.props(:,material_number);      
+    global_nodes    = FEM(nt).mesh.connectivity(:,ielement); 
+    material_number = MAT(nt).matno(ielement);               
+    matyp           = MAT(nt).matyp(material_number);        
+    properties      = MAT(nt).props(:,material_number);      
     xlocal          = GEOM.x(:,global_nodes);            
     x0local         = GEOM.x0(:,global_nodes);               
-    Ve              = GEOM.Ve(ielement);                 
+    Ve              = GEOM.Ve(ielement,nt);                 
     %----------------------------------------------------------------------
     % Select internal variables within the element (PLAST).
     %----------------------------------------------------------------------
-    PLAST_element = selecting_internal_variables_element(PLAST,matyp,ielement);    
+    PLAST_element = selecting_internal_variables_element(PLAST(nt),matyp,ielement);    
     %----------------------------------------------------------------------
     % Compute stresses at Gauss point level.
     %----------------------------------------------------------------------
     Stress = stress_output(GEOM.ndime,PLAST_element,matyp,Ve,xlocal,x0local,...
-                           properties,QUADRATURE,CONSTANT,FEM,KINEMATICS,GEOM);  
+                           properties,QUADRATURE(nt).element,CONSTANT,FEM(nt),KINEMATICS(nt),GEOM);  
     %----------------------------------------------------------------------
     % Print stress.
     %----------------------------------------------------------------------    
@@ -56,8 +56,19 @@ for ielement=1:FEM.mesh.nelem
    % compute average stress from all qaudrature points. Note that 
    % this could be put into an for loop, however I kept it seperate 
    % here to show more of what is going on...
-   if FEM.mesh.element_type == 'quad4'
-       if QUADRATURE.ngauss == 4 
+   switch FEM(nt).mesh.element_type
+       case 'truss2'
+       if QUADRATURE(nt).element.ngauss == 2 
+           % flagshyp storage convention
+           % |xx|         |1 |
+           %
+           xx = 1;
+           % xx stress
+%            stress_avg(1)=(Stress(xx,1)+Stress(xx,2))/2;
+           stress_avg(1) = Stress;
+       end
+       case 'quad4'
+       if QUADRATURE(nt).element.ngauss == 4 
            % flagshyp storage convention
            % |xx xy|         |1 2|
            % |   zz|  ---->  |  3|
@@ -73,8 +84,8 @@ for ielement=1:FEM.mesh.nelem
            % yy stress
            stress_avg(3)=(Stress(yy,1)+Stress(yy,2)+Stress(yy,3)+Stress(yy,4))/4.;
        end
-   elseif FEM.mesh.element_type == 'hexa8'
-       if QUADRATURE.ngauss == 8 
+       case'hexa8'
+       if QUADRATURE(nt).element.ngauss == 8 
            % flagshyp storage convention
            % |xx xy xz|         |1 2 3|
            % |   yy yz|  ---->  |  4 5| %this is currently a guess - 3/2018
@@ -108,23 +119,34 @@ for ielement=1:FEM.mesh.nelem
        end
    end
    % compute average pressure per element
-   if FEM.mesh.element_type == 'quad4'
-       if QUADRATURE.ngauss == 4 
+   switch FEM(nt).mesh.element_type
+       case 'truss2'
+           pressure_avg = Stress;
+       case 'quad4'
+       if QUADRATURE(nt).element.ngauss == 4 
            pressure_avg=(1.0/3.0)*( stress_avg(1) + stress_avg(3));% pressure in 2D ??? (is 1/3 correct?)           
        end
-   elseif FEM.mesh.element_type == 'hexa8'
-       if QUADRATURE.ngauss == 8
+       case 'hexa8'
+       if QUADRATURE(nt).element.ngauss == 8
            pressure_avg=(1.0/3.0)*( stress_avg(1) + stress_avg(4) + stress_avg(6)) ;
        end
    end
    
-    if FEM.mesh.element_type == 'quad4'
-       if QUADRATURE.ngauss == 4 
+   switch FEM(nt).mesh.element_type
+       case 'truss2'
+%            fprintf(fid3,'%s%s%s%s%s%.10e %.10e\n',space,space,space,space,space,...
+%                stress_avg(1),pressure_avg);   
+           fprintf(fid3,'%s%s%s%s%s%.10e %.10e %.10e %.10e %.10e %.10e %.10e \n',...
+               space,space,space,space,space,...
+               stress_avg(1),0,0,0,0,0,pressure_avg); 
+           
+       case 'quad4'
+       if QUADRATURE(nt).element.ngauss == 4 
            fprintf(fid3,'%s%s%s%s%s%.10e %.10e %.10e %.10e\n',space,space,space,space,space,...
                stress_avg(1),stress_avg(2),stress_avg(3),pressure_avg);        
        end
-   elseif FEM.mesh.element_type == 'hexa8'
-       if QUADRATURE.ngauss == 8
+       case 'hexa8'
+       if QUADRATURE(nt).element.ngauss == 8
            fprintf(fid3,'%s%s%s%s%s%.10e %.10e %.10e %.10e %.10e %.10e %.10e \n',...
                space,space,space,space,space,...
                stress_avg(1),stress_avg(2),stress_avg(3),...
@@ -134,11 +156,11 @@ for ielement=1:FEM.mesh.nelem
 
 
 end 
-
+end
 fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space);
 
 %     fprintf(' %.10e %.10e %.10e %.10e %.10e %.10e\n',...
 %                    stress_avg(1),stress_avg(2),stress_avg(3),...
 %                stress_avg(4),stress_avg(5),stress_avg(6));
-end
+
 

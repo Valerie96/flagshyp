@@ -60,7 +60,7 @@ mesh_dof = FEM(1).mesh.n_dofs;
 GEOM.x0              = GEOM.x;
 GLOBAL.Residual      = zeros(mesh_dof,1);
 GLOBAL.external_load = zeros(mesh_dof,1);
-GLOBAL.Reactions      = zeros(mesh_dof,1);
+GLOBAL.Reactions     = zeros(mesh_dof,1);
 
 
 
@@ -103,7 +103,7 @@ end
 
                                              
                                              
-if(explicit ==1)
+if(explicit == 1)
     %For now, assume no initial internal forces
 %     [GLOBAL,PLAST] = residual_assembly_explicit(CON.xlamb,GEOM,MAT,FEM,GLOBAL,...
 %                                                  CONSTANT,QUADRATURE.element,PLAST,KINEMATICS); 
@@ -111,7 +111,9 @@ if(explicit ==1)
     GLOBAL.T_int     = zeros(FEM(1).mesh.n_dofs,1);
     GLOBAL.Residual = GLOBAL.T_int - GLOBAL.external_load;
 
-    if ~isempty(FEM(1).mesh.embedded) || ~isempty(FEM(2).mesh.embedded)
+%     if ~isempty(FEM(1).mesh.embedded) || ~isempty(FEM(2).mesh.embedded)
+global EmbedElt;
+    if (EmbedElt == 1)
         GEOM = inverse_mapping(GEOM,FEM,BC.tienodes);
         [GLOBAL] = effective_mass_assembly(GEOM,MAT,FEM,GLOBAL,QUADRATURE);
 

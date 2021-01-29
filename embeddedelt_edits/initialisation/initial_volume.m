@@ -5,9 +5,14 @@
 function GEOM = initial_volume(FEM,GEOM,QUADRATURE,MAT,KINEMATICS)
 Global_nums = 1:GEOM.total_n_elets;
 
-n_elt_types = zeros(1,FEM(1).n_elet_type);
-n_elt_types = [FEM(1).mesh.nelem,FEM(2).mesh.nelem];
-max_elet_type = max(n_elt_types);
+
+max_elet_type = 0;
+for i=1:FEM(1).n_elet_type
+    if FEM(i).mesh.nelem > max_elet_type
+        max_elet_type = FEM(i).mesh.nelem
+    end
+end
+
 
 Ve      = zeros(max_elet_type,FEM(1).n_elet_type); 
 V_total = 0;
