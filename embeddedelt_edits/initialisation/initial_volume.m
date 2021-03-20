@@ -67,7 +67,7 @@ end
 GEOM.Ve      = Ve;
 GEOM.V_total = V_total;
 fprintf('Total mesh volume is: %15.5f \n', GEOM.V_total)
-fprintf('Total mesh mass is: %15.5f \n', M_total)
+fprintf('Total mesh mass (p*V) is: %15.5f \n', M_total)
 
 
 

@@ -4,12 +4,12 @@
 % - For node CON.OUTPUT.nwant and dof CON.OUTPUT.iwant output displacement
 %   and corresponding force (file name '...FLAGOUT.TXT').
 %--------------------------------------------------------------------------
-function output(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS)
+function output(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,time,dt)
 %--------------------------------------------------------------------------
 % Restart or write from sratch.
 %--------------------------------------------------------------------------
 string='a';
-if (~PRO.rest && CON.incrm==1)
+if (~PRO.rest && CON.incrm==0)
    string='w';
 end
 %--------------------------------------------------------------------------
@@ -27,7 +27,7 @@ fid = fopen(PRO.outputfile_name,string);
 %--------------------------------------------------------------------------
 space = '       ';
 output_title = [PRO.title space 'at increment:' space  ...
-               num2str(CON.incrm) ', ' space 'load:  ' num2str(CON.xlamb)];
+               num2str(CON.incrm) ', ' space 'load:  ' num2str(CON.xlamb) space 'time:  ' num2str(time) space 'dt:  ' num2str(dt)];
 fprintf(fid,'%c',output_title);
 fprintf(fid,'\n');
 
@@ -48,6 +48,7 @@ info(:,2)                 =  BC.icode;
 aux                       =  zeros(FEM(1).mesh.n_dofs,1);
 aux(BC.fixdof)            =  GLOBAL.Reactions(BC.fixdof);
 aux(BC.freedof)           =  GLOBAL.external_load(BC.freedof);
+% aux(BC.tiedof)            =  GLOBAL.Reactions(BC.tiedof);
 aux                       =  reshape(aux,GEOM.ndime,[]);
 info(:,3:end)             =  [GEOM.x'  aux'];
 format                    =  ['%d %d ' repmat('% -1.4E ',1,2*GEOM.ndime) '\n'];
@@ -71,6 +72,8 @@ info(:,2:end)             =  [GEOM.x'-GEOM.x0' aux_v' aux_a'];
 format                    =  ['%d ' repmat('% -1.4E ',1,GEOM.ndime) ' || ' repmat('% -1.4E ',1,GEOM.ndime) ' || ' repmat('% -1.4E ',1,GEOM.ndime) '\n'];
 fprintf(fid,format,info');
 
+fprintf(fid,'\n');
+fprintf(fid,'Element Types: %d \n',FEM(1).n_elet_type);
 
 for i=1:FEM(1).n_elet_type
     %--------------------------------------------------------------------------
@@ -125,7 +128,7 @@ for i=1:FEM(1).n_elet_type
         %----------------------------------------------------------------------
         % Print stress.
         %----------------------------------------------------------------------    
-        StressStrain = [Stress, LE];
+        StressStrain = [Stress; LE];
         format = [repmat('% -1.4E ',1,size(Stress,1)) ' || ' repmat('% -1.4E ',1,size(LE,1)) '\n'];
         fprintf(fid,format',StressStrain);
         

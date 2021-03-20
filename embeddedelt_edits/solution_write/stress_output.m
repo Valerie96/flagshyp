@@ -7,10 +7,15 @@ switch matyp
     %----------------------------------------------------------------------
     % Obtain stress for trusses.
     %----------------------------------------------------------------------
-    case 2        
-        [T_internal,indexi,indexj,global_stiffness,counter,PLAST,Stress,eps] = ...
-         element_force_and_stiffness_truss(properties,xlocal,x0local,[1 2],...
-         FEM,PLAST_element,1,randi(1,36,1),randi(1,36,1),randi(1,36,1),GEOM);        
+    case 2 
+        DAMPING.b1 = 0; DAMPING.b2 = 0;
+        PLAST.ep = 0; PLAST.epbar = 0; 
+        [~,~,~,Jn_1,VolRate,Stress,eps] = element_force_truss(...
+          properties,xlocal,x0local,FEM,PLAST,1,GEOM,DAMPING,1);
+        
+%         [T_internal,indexi,indexj,global_stiffness,counter,PLAST,Stress,eps] = ...
+%          element_force_and_stiffness_truss(properties,xlocal,x0local,[1 2],...
+%          FEM,PLAST_element,1,randi(1,36,1),randi(1,36,1),randi(1,36,1),GEOM);        
     otherwise
         %------------------------------------------------------------------
         % Initialisation for continuum elements.
@@ -56,12 +61,19 @@ if matyp~=2
        %I want log strain too
        %-----------------------------------------------------------------------
        lam = kinematics_gauss.lambda;
-       Le = zeros(dim,dim);
+       LE = zeros(dim,dim);
        for j=1:dim
-           Le = Le + sqrt(lam(j))*kinematics_gauss.n(:,j)*kinematics_gauss.n(:,j)'; 
+           LE = LE + log(lam(j))*kinematics_gauss.n(:,j)*kinematics_gauss.n(:,j)'; 
+           LE(~isfinite(LE)) = 0;
        end
-       eps(1:end,igauss) = Le(components);
+       eps(1:end,igauss) = LE(components);
    
+       
+       
+       
+       
+       
+       
    end
    %-----------------------------------------------------------------------
    % Remove thickness from non-plane stress elements.

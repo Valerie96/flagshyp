@@ -16,7 +16,8 @@ for i = 1:FEM(1).n_elet_type
 check = (isempty((MAT(i).matyp(MAT(i).matyp==17)))*isempty((MAT(i).matyp(MAT(i).matyp==2))));
 
     if check  
-       PLAST = [];
+       PLAST(i).a = [0];
+       PLAST(i).b = [0];
     else 
    
        switch FEM(i).mesh.element_type
@@ -43,12 +44,12 @@ check = (isempty((MAT(i).matyp(MAT(i).matyp==17)))*isempty((MAT(i).matyp(MAT(i).
     %   Global number assignments will be needed when looping through all
     %   elements (maybe, I might be wrong)
     %--------------------------------------------------------------------------
-    Global_nums = [nel+1: nel+FEM(i).mesh.nelem];
-    GEOM.element_num(1, Global_nums) = 1:FEM(i).mesh.nelem;     %Global Element Numbers
-    GEOM.element_num(2, Global_nums) = ones(length(Global_nums)) * i; %Global Element Material specification
-    GEOM.element_num(3, Global_nums) = FEM(i).mesh.embedcode;
-    
-    nel = nel + Global_nums(end);
+%     Global_nums = [nel+1: nel+FEM(i).mesh.nelem];
+%     GEOM.element_num(1, Global_nums) = 1:FEM(i).mesh.nelem;     %Global Element Numbers
+%     GEOM.element_num(2, Global_nums) = ones(length(Global_nums)) * i; %Global Element Material specification
+%     GEOM.element_num(3, Global_nums) = FEM(i).mesh.embedcode;
+%     
+%     nel = nel + Global_nums(end);
     %--------------------------------------------------------------------------
 
 end
@@ -124,8 +125,10 @@ global EmbedElt;
         GEOM.embedded.HostTotals  = zeros(FEM(1).mesh.nelem,2);
         GEOM.embedded.Embed_Zeta  = zeros(3, GEOM.npoin);
         
-        [GLOBAL] = mass_assembly(CON.xlamb,GEOM,MAT,FEM,GLOBAL,...
-                          CONSTANT,QUADRATURE.element,PLAST,KINEMATICS);
+        [GLOBAL] = lumped_mass_assembly(GEOM,MAT,FEM,GLOBAL,QUADRATURE);
+        
+%         [GLOBAL] = mass_assembly(CON.xlamb,GEOM,MAT,FEM,GLOBAL,...
+%                           CONSTANT,QUADRATURE.element,PLAST,KINEMATICS);
                       
     end
 else

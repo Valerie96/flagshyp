@@ -18,17 +18,19 @@ dim=GEOM.ndime;
 
 VolCorrect = false;
 
+% *** For now we are assuming that host elements are of FEM type 1 and
+% embedded are FEM type 2
     %----------------------------------------------------------------------
     % GATHER material properties of the host and embedded elt
     %----------------------------------------------------------------------   
-    material_number   = MAT.matno(ielement);     
-    matyp_h           = MAT.matyp(material_number);        
-    properties_h      = MAT.props(:,material_number);                       
+    material_number   = MAT(1).matno(ielement);     
+    matyp_h           = MAT(1).matyp(material_number);        
+    properties_h      = MAT(1).props(:,material_number);                       
     Ve_h              = GEOM.Ve(ielement);  
     
-    material_number   = MAT.matno(eelt);     
-    matyp_e           = MAT.matyp(material_number);        
-    properties_e      = MAT.props(:,material_number);
+    material_number   = MAT(2).matno(eelt);     
+    matyp_e           = MAT(2).matyp(material_number);        
+    properties_e      = MAT(2).props(:,material_number);
     Ve_e              = GEOM.Ve(eelt);  
     
     
@@ -61,29 +63,34 @@ VolCorrect = false;
     nGp = GEOM.embedded.HostTotals(ielement,1);
     
     %Get host element nodes
-    h_connectivity = FEM.mesh.connectivity(:,ielement);
+    h_connectivity = FEM(1).mesh.connectivity(:,ielement);
     x_h = GEOM.x0(:,h_connectivity);  %Host node global coordinates
     
     %Get embedded element information
-    e_connectivity = FEM.mesh.connectivity(:,eelt);
+    e_connectivity = FEM(2).mesh.connectivity(:,eelt);
     x_e = GEOM.x0(:,e_connectivity);
     xelocal  = GEOM.x(:,e_connectivity);                     
     e_nodes_zeta = GEOM.embedded.Embed_Zeta(:,e_connectivity);
     
-    QUADRATURE_E = QUADRATURE; %Quadrature of embedded elt (assuming same element type as host)
-    QUADRATURE_EH = QUADRATURE; %Quadrature of embedded elt in the host domain 
-    KINEMATICS_EH = KINEMATICS;
+    QUADRATURE_E = QUADRATURE(2); %Quadrature of embedded elt (assuming same element type as host)
+    QUADRATURE_EH = QUADRATURE(1); %Quadrature of embedded elt in the host domain 
+    KINEMATICS_EH = KINEMATICS(1);
 
     gp_zeta = zeros(3,8);  
     for gp = 1: nGp
        
         %Get the coordinates of the gauss point in the embedded space (LE)
-        gp_nu = QUADRATURE_E.Chi(gp,:);
+        gp_nu = QUADRATURE_E.element.Chi(gp,:);
+        %Convert local 1D gp coordinate to global xyz
+        
+        dx = x_e(:,2) - x_e(:,1);        
+        dz = gp_nu * dx + x_e(:,1);
+        gp_glob = dz;
         
         %Find the gauss point coordinates in the host space (LH) by mapping
         %from LE to LH using the coordinates of the embedded nodes in LH
         %Or you could actually just get it from EM.interpolation.element.N(:,gp)
-        N_nu_a = shape_function_values_at(gp_nu, 'hex'); %mapping with shape functions
+        N_nu_a = shape_function_values_at(gp_glob, 'hex'); %mapping with shape functions
  
         %z(n) = [N][ze] = sum(N1*ze1 + 
         %Doing this for all gauss points at once, so loop through nGp times
@@ -98,7 +105,7 @@ VolCorrect = false;
         %Test accuracy of that conversion 
             %Find gp_x from gp_nu and gp_zeta
             gp_xz = find_xyz_in_host(gp_zeta(:,gp), x_h);
-            gp_xn = find_xyz_in_host(gp_nu, x_e);
+            gp_xn = find_xyz_in_truss(gp_nu, x_e);
             check = gp_xz - gp_xn;
             if abs(check(1))>1E-10 || abs(check(2))>1E-10 || abs(check(3)) >1E-10
                 fprintf("Space conversion failure: host %u, guest %u, gp %u\n",ielement, eelt, gp);
@@ -176,12 +183,12 @@ VolCorrect = false;
     %Compute deformation measures at quad points
     %----------------------------------------------------------------------
     
-    QUADRATURE_EH.Chi = gp_zeta';
-    KINEMATICS_EH = gradients(xlocal,x0local,FEM.interpolation.element.DN_chi,...
-             QUADRATURE_EH,KINEMATICS_EH); 
+    QUADRATURE_EH.element.Chi = gp_zeta';
+    KINEMATICS_EH = gradients(xlocal,x0local,FEM(1).interpolation.element.DN_chi,...
+             QUADRATURE_EH.element,KINEMATICS_EH); 
          
-    KINEMATICS = gradients(xlocal,x0local,FEM.interpolation.element.DN_chi,...
-             QUADRATURE,KINEMATICS);
+    KINEMATICS_A = gradients(xlocal,x0local,FEM(1).interpolation.element.DN_chi,...
+             QUADRATURE(1).element,KINEMATICS(1));
          
 %--------------------------------------------------------------------------
     
@@ -202,9 +209,30 @@ VolCorrect = false;
         % Calculate embeddded element stress measure in the host elt system
         % using the embedded elt material model
         %----------------------------------------------------------------------    
-        [Cauchy_eh,PLAST_EH,...
-         plast_gauss] = Cauchy_type_selection(kinematics_gauss,properties_e,...
-                                              CONSTANT,dim,matyp_e,PLAST,igauss);
+%         [Cauchy_eh,PLAST_EH,...
+%          plast_gauss] = Cauchy_type_selection(kinematics_gauss,properties_e,...
+%                                               CONSTANT,dim,matyp_e,PLAST,igauss);
+        [T_truss,~,~,~,~,Cauchy,epsilon, Cauchy_e] = element_force_truss(...
+          properties_e,xelocal,x_e,FEM(2),PLAST,1,GEOM,DAMPING,1);
+      
+        %That stress was actually calculated in the fiber csys, so we need
+        %to transform to host csys (ie the global coordinates)
+        dx      = xelocal(:,2) - xelocal(:,1);   %     
+        l       = norm(dx); 
+        
+        ihat = [1; 0; 0]; jhat = [0; 1; 0]; khat = [0; 0; 1]; %Global basis vectors
+        
+        %Create orthonormal basis for the truss from dx
+        dy = [0; -dx(3); dx(2)]; dz = cross(dx,dy);
+        dx = dx/norm(dx); dy = dy/norm(dy); dz = dz/norm(dz);
+        
+        Tran = [dx'*ihat dx'*jhat dx'*khat; dy'*ihat dy'*jhat dy'*khat; dz'*ihat dz'*jhat dz'*khat];
+
+        fprintf('%e \n', Cauchy);
+        Cauchy_eh = Tran*Cauchy_e*Tran';
+        fprintf('%e %e %e \n', Cauchy_eh(1,1), Cauchy_eh(1,2),Cauchy_eh(1,3));
+        fprintf('%e %e %e \n', Cauchy_eh(2,1), Cauchy_eh(2,2),Cauchy_eh(2,3));
+        fprintf('%e %e %e \n', Cauchy_eh(3,1), Cauchy_eh(3,2),Cauchy_eh(3,3));
         %----------------------------------------------------------------------
         % Obtain elasticity tensor (for incompressible or nearly incompressible, 
         % only deviatoric component).
@@ -224,16 +252,14 @@ VolCorrect = false;
         %----------------------------------------------------------------------
         % Compute numerical integration multipliers.
         %----------------------------------------------------------------------
-        JW = kinematics_gauss.Jx_chi*QUADRATURE_EH.W(igauss)*...
+        JW = kinematics_gauss.Jx_chi*QUADRATURE_EH.element.W(igauss)*...
              thickness_plane_stress(properties_e,kinematics_gauss.J,matyp_e);
         %----------------------------------------------------------------------
         % Compute contribution to (internal) force vector.
         %----------------------------------------------------------------------
         T = Cauchy_eh*kinematics_gauss.DN_x;
         T_e = T(:)*JW;
-        
-        
-        
+
         %Step D
         %----------------------------------------------------------------------
         % Calculate embeddded element stress measure in the host elt system
@@ -261,7 +287,7 @@ VolCorrect = false;
         %----------------------------------------------------------------------
         % Compute numerical integration multipliers.
         %----------------------------------------------------------------------
-        JW = kinematics_gauss.Jx_chi*QUADRATURE_EH.W(igauss)*...
+        JW = kinematics_gauss.Jx_chi*QUADRATURE_EH.element.W(igauss)*...
              thickness_plane_stress(properties_h,kinematics_gauss.J,matyp_h);
         %----------------------------------------------------------------------
         % Compute contribution to (internal) force vector.

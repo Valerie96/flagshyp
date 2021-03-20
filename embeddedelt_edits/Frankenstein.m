@@ -2,15 +2,15 @@
 %out what all of the variables are. This may be a disaster
 clear; clc; close all; 
 % inputfile='explicit_embedded3D_new.dat';
-% inputfile='explicit_embedded_4elt_new.dat';
 inputfile='explicit_3D.dat';
 % inputfile='seperate_embedded.dat';
-% inputfile='seperate.dat';
+% inputfile='truss_only.dat';
 inputfile='explicit_embedded_truss.dat';
+% inputfile='truss_small_strain.dat';
 basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
 simtime = 0.01;
-outputfreq=2;
-DAMPING.b1 = 0.042; %Linear bulk viscosity damping
+outputfreq=1;
+DAMPING.b1 = 0.035; %Linear bulk viscosity damping
 DAMPING.b2 = 0; %Quadratic bulk viscosity damping
 
 ansmlv='y'; 
@@ -144,6 +144,8 @@ tic
 %       - this is done in the intialisation.m file, line 68
 CON.xlamb = 0;
 CON.incrm = 0; 
+output(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,0,0);
+CON.incrm = CON.incrm + 1; 
 
 %step 2 - getForce
 [GLOBAL,updated_PLAST,GEOM.Jn_1,GEOM.VolRate] = getForce_explicit(CON.xlamb,...
@@ -159,22 +161,36 @@ disp_prev = zeros(FEM(1).mesh.n_dofs,1);
 %step 4 - time update/iterations
 Time = 0; 
 tMax = simtime; % in seconds
-prefactor = 0.8;
+GLOBAL.tMax = tMax;
+prefactor = 0.75;
 dt= prefactor * CalculateTimeStep(FEM(1),GEOM,MAT(1),DAMPING); % in seconds
-plot_counter  = 0;
 time_step_counter = 0;
 plot_counter = 0;
 nPlotSteps = 20 ;
 nSteps = round(tMax/dt);
 nsteps_plot = round(nSteps/nPlotSteps);
 
+
+
 % start explicit loop
-while(Time<=tMax)
-    t_n=Time;
-    t_np1 = Time + dt;
-    Time = t_np1; % update the time by adding full time step
+while(Time<tMax)
+
+    t_n       = Time;
+    t_np1     = Time + dt;
+    Time      = t_np1; % update the time by adding full time step
     dt_nphalf = dt; % equ 6.2.1
-    t_nphalf = 0.5 *(t_np1 + t_n); %equ 6.2.1
+    t_nphalf  = 0.5 *(t_np1 + t_n); %equ 6.2.1
+    
+    if Time>=tMax
+        fprintf('%d\n',Time);
+        dt        = tMax - t_n;
+        Time      = tMax;
+        t_np1     = Time;
+        dt_nphalf = dt;
+        t_nphalf  = 0.5 *(t_np1 + t_n);
+        fprintf('%d\n',Time);
+    end        
+    
     
 % step 5 - update velocities
     velocities_half = GLOBAL.velocities + (t_nphalf - t_n) * GLOBAL.accelerations;
@@ -217,7 +233,7 @@ while(Time<=tMax)
   %--------------------------------------------------------------------
   if  BC.n_prescribed_displacements > 0
       [GEOM.x ,velocities_half]  = update_prescribed_displacements_explicit(BC.dofprescribed,...
-               GEOM.x0,GEOM.x,velocities_half,BC.presc_displacement,t_n,tMax); 
+               GEOM.x0,GEOM.x,velocities_half,BC.presc_displacement,t_np1,tMax); 
        disp_n(BC.fixdof) = GEOM.x(BC.fixdof) - GEOM.x0(BC.fixdof);  
 %      |-/
 %      Update coodinates of embedded nodes (if there are any)  
@@ -241,10 +257,10 @@ while(Time<=tMax)
   end
   
 % %----------------------------------------------------------------   
-  
+
   % save internal force, to be used in energy computation
-  fi_prev = GLOBAL.T_int;
-  fe_prev = GLOBAL.external_load_effective;
+  fi_prev = GLOBAL.T_int;  fi_prev(BC.tiedof) = zeros(length(BC.tiedof),1);
+  fe_prev = GLOBAL.external_load + GLOBAL.Reactions;
   
 %step 8 - getForce
   [GLOBAL,updated_PLAST,GEOM.Jn_1,GEOM.VolRate] = getForce_explicit(CON.xlamb,...
@@ -257,6 +273,8 @@ while(Time<=tMax)
 %step 9 - compute accelerations.       
   AccOld = GLOBAL.accelerations;
   GLOBAL.accelerations = inv(GLOBAL.M)*(GLOBAL.external_load_effective - GLOBAL.T_int);
+  
+%   GLOBAL.external_load_effective(BC.dofprescribed) = GLOBAL.M(BC.dofprescribed,BC.dofprescribed) * GLOBAL.accelerations(BC.dofprescribed);
   
 % step 10 second partial update of nodal velocities
   VelOld = GLOBAL.velocities;
@@ -272,21 +290,26 @@ while(Time<=tMax)
           end
   
 %--------------------------------------------------------------
-  
+  EnergyIntForce = GLOBAL.T_int;
+   EnergyIntForce(BC.tiedof) = zeros(length(BC.tiedof),1);
 % step 11 check energy
   [energy_value, max_energy] = check_energy_explicit(PRO,FEM,CON,BC, ...
-      GLOBAL,disp_n, disp_prev,GLOBAL.T_int,fi_prev,...
-      GLOBAL.external_load_effective,fe_prev,t_n);
+      GLOBAL,disp_n, disp_prev,EnergyIntForce,fi_prev,...
+      GLOBAL.external_load + GLOBAL.Reactions,fe_prev,Time);
   
 %Plot every # steps
   if( mod(time_step_counter,outputfreq) == 0 )
       plot_counter = plot_counter +1;
       
-      output(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS);
+      output(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,Time,dt);
       output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS);
 
 %       PLAST = save_output(updated_PLAST,PRO,FEM,GEOM,QUADRATURE,BC,...
 %                 MAT,LOAD,CON,CONSTANT,GLOBAL,PLAST,KINEMATICS);  
+
+        disp(['step = ',sprintf('%d', time_step_counter-1),'     time = ',... 
+          sprintf('%.2e', t_n), ' sec.     dt = ', sprintf('%.2e', dt_old) ,...
+          ' sec.'])
   end
   
   time_step_counter = time_step_counter + 1;  
@@ -294,14 +317,9 @@ while(Time<=tMax)
   % this is set just to get the removal of old vtu files in output.m
   % correct
   CON.incrm =  CON.incrm + 1;
-  
-  if( mod(time_step_counter,outputfreq) == 0 )
-    disp(['step = ',sprintf('%d', time_step_counter-1),'     time = ',... 
-  sprintf('%.2e', t_n), ' sec.     dt = ', sprintf('%.2e', dt_old) ,...
-  ' sec.'])
-  end
+ 
 
-formt = [repmat('% -1.4E ',1,3) '\n'];
+
 
 end % end on while loop
                    

@@ -5,7 +5,7 @@
 function [T_internal,counter,PLAST_element,geomJn_1,VolRate] = ...
           InternalForce_explicit(ielement,FEM,xlocal,x0local,...
           element_connectivity,Ve,QUADRATURE,properties,CONSTANT,GEOM,...
-          matyp,PLAST,counter,KINEMATICS,MAT,DAMPING,dt)
+          matyp,PLAST,counter,KINEMATICS,MAT,GlobT_int,DAMPING,dt)
       
 %define explicit as global variable in order to use it in function      
 % it is assigned value in Flagshyp.m
@@ -122,24 +122,47 @@ end
 % Embedded Elt, Internal force modification, if this element has any
 % embedded elements
 
-% if GEOM.embedded.HostTotals(ielement,2) > 0
-%     search = 0;
-%     for eelt = 1:GEOM.npoin
-%         if GEOM.embedded.ElementHost(eelt) == ielement
-% %             fprintf("Host: %u    Guest: %u\n", ielement, eelt);
-%             
-%               T_internal = CorrectInternalForce_explicit(ielement,...
-%                            T_internal,FEM, xlocal,x0local,...
-%                            QUADRATURE,CONSTANT,GEOM,...
-%                            PLAST,KINEMATICS,MAT,DAMPING,eelt);
+if GEOM.embedded.HostTotals(ielement,2) > 0
+    search = 0;
+    for eelt = 1:GEOM.npoin
+        if GEOM.embedded.ElementHost(eelt) == ielement
+%             fprintf("Host: %u    Guest: %u\n", ielement, eelt);
+
+testfid = fopen('Force.txt','a');
+formt = [repmat('% -1.4E ',1,3)];
+    fprintf(testfid,'\n');
+    for i=1:3:24
+        fprintf(testfid,formt, T_internal(i:3));
+    end            
+    
+              T_internal = DistributeCorrectInternalForce_explicit(ielement,...
+                           T_internal,FEM, xlocal,x0local,...
+                           QUADRATURE,CONSTANT,GEOM,GlobT_int,...
+                           PLAST,KINEMATICS,MAT,DAMPING,eelt);
+
+
 % 
-%               search = search + 1;
-%               if search >= GEOM.embedded.HostTotals(ielement,2)
-%                   break;
-%               end
-%         end
-%     end
-% end
+% 
+%               T_internal = CorrectInternalForce_explicit(ielement,...
+%                         T_internal,FEM,xlocal,x0local,QUADRATURE,CONSTANT,GEOM,...
+%                             PLAST,KINEMATICS,MAT,DAMPING,eelt);
+% 
+    fprintf(testfid,'\n');
+    for i=1:3:24
+        fprintf(testfid,formt, T_internal(i:3));
+    end  
+    fprintf(testfid,'\n');
+    fclose(testfid);
+                        
+                        
+                        
+              search = search + 1;
+              if search >= GEOM.embedded.HostTotals(ielement,2)
+                  break;
+              end
+        end
+    end
+end
 %--------------------------------------------------------------------------
 % Store internal variables.
 %--------------------------------------------------------------------------

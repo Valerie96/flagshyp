@@ -4,10 +4,15 @@
 %--------------------------------------------------------------------------
 function [GLOBAL,updated_PLAST,Jn_1_vec,VolRate_vec] = getForce_explicit(xlamb,...
           GEOM,MAT,FEM,GLOBAL,CONSTANT,QUADRATURE,PLAST,KINEMATICS,BC,DAMPING,dt)    
+      
+Step_globalT_int = zeros(size(GLOBAL.T_int,1),1);      
+
+for k = [FEM(1).n_elet_type:-1:1]
+    
 %--------------------------------------------------------------------------
 % Initialisation of the updated value of the internal variables.
 %--------------------------------------------------------------------------
-updated_PLAST = PLAST;
+updated_PLAST = PLAST(k);
 %--------------------------------------------------------------------------
 % Initialises the total external load vector except pressure contributions.
 %--------------------------------------------------------------------------
@@ -18,22 +23,25 @@ VolRate_vec=zeros(FEM(1).mesh.nelem,QUADRATURE(1).element.ngauss);
 
 
 
-Step_globalT_int = zeros(size(GLOBAL.T_int,1),1);
+counter          = 1;                                       
 
-counter          = 1;                                        
+
 
 % Main element loop.
 %--------------------------------------------------------------------------
 % for ielement=1:FEM.mesh.nelem
-for ii=1:FEM(1).mesh.nelem
+
+
+
+for ii=1:FEM(k).mesh.nelem
     ielement=ii;
     %----------------------------------------------------------------------
     % GATHER Temporary variables associated with a particular element.
     %----------------------------------------------------------------------
-    global_nodes    = FEM(1).mesh.connectivity(:,ielement);   
-    material_number = MAT(1).matno(ielement);     
-    matyp           = MAT(1).matyp(material_number);        
-    properties      = MAT(1).props(:,material_number); 
+    global_nodes    = FEM(k).mesh.connectivity(:,ielement);   
+    material_number = MAT(k).matno(ielement);     
+    matyp           = MAT(k).matyp(material_number);        
+    properties      = MAT(k).props(:,material_number); 
     xlocal          = GEOM.x(:,global_nodes);                     
     x0local         = GEOM.x0(:,global_nodes);                       
     Ve              = GEOM.Ve(ielement);      
@@ -44,26 +52,27 @@ for ii=1:FEM(1).mesh.nelem
     %----------------------------------------------------------------------
     % Select internal variables within the element (plasticity).
     %----------------------------------------------------------------------
-    PLAST_element = selecting_internal_variables_element(PLAST,matyp,ielement);    
+    PLAST_element = selecting_internal_variables_element(PLAST(k),matyp,ielement);    
     %----------------------------------------------------------------------
     % Compute internal force and stiffness matrix for an element.
     %----------------------------------------------------------------------    
-    switch FEM(1).mesh.element_type
+    switch FEM(k).mesh.element_type
       case 'truss2'
-       [T_internal,indexi,indexj,global_stiffness,counter,PLAST_element] = ...
-        element_force_and_stiffness_truss(properties,xlocal,x0local,...
-        global_nodes,FEM(1),PLAST_element,counter,indexi,indexj,...
-        global_stiffness,GEOM);
+       [T_internal,counter,PLAST(k),Jn_1,VolRate,~,~, ~] = element_force_truss(...
+          properties,xlocal,x0local,FEM(k),PLAST(k),counter,GEOM,DAMPING,dt);
+      
+        Jn_1_vec(ielement) = 1;
+        VolRate_vec(ielement) = 1;
       otherwise
        [T_internal,counter,PLAST_element,Jn_1,VolRate] = ...
         InternalForce_explicit(ielement,FEM,xlocal,x0local,global_nodes,...
         Ve,QUADRATURE,properties,CONSTANT,GEOM,matyp,PLAST_element,...
-        counter,KINEMATICS,MAT,DAMPING,dt);
+        counter,KINEMATICS,MAT,GLOBAL.T_int,DAMPING,dt);
         
         Jn_1_vec(ielement) = Jn_1;
         VolRate_vec(ielement) = VolRate;
     end
-    formt = [repmat('% -1.4E ',1,3) '\n'];
+%     formt = [repmat('% -1.4E ',1,3)];
 %     fprintf("\nElementForce:\n");
 %     fprintf("Element %u\n",ielement);
 %     for i=1:3:24
@@ -74,13 +83,16 @@ for ii=1:FEM(1).mesh.nelem
     % Assemble element contribution into global internal force vector.   
     %----------------------------------------------------------------------
     Step_globalT_int = force_vectors_assembly(T_internal,global_nodes,...
-                   Step_globalT_int,FEM(1).mesh.dof_nodes);
+                   Step_globalT_int,FEM(k).mesh.dof_nodes);
                
 %    fprintf("\nStep_globalT_int:\n");
-%     for i=1:3:48
-%         fprintf(formt, Step_globalT_int(i:i+2));
+%     fid = fopen('InternalForce.txt','a');
+%     for i=1:3:3
+%         fprintf(fid,formt, Step_globalT_int(i:i+2));
 %     end
-%     fprintf('\n');
+%     fprintf(fid,'% -1.4E ', Cauchy);
+%     fprintf(fid,'\n');
+%     fclose(fid);
     %----------------------------------------------------------------------
     % Storage of updated value of the internal variables. 
     %----------------------------------------------------------------------    
@@ -88,49 +100,39 @@ for ii=1:FEM(1).mesh.nelem
                                        ielement);    
 
 end
-    
-    GLOBAL.T_int = Step_globalT_int;
-%     Step_globalT_int
-%        fprintf("\nGlobalForce:\n");
-%     for i=1:3:48
-%         fprintf(formt, GLOBAL.T_int(i:i+2));
-%     end
-%     fprintf('\n');
-%--------------------------------------------------------------------------
-% Global tangent stiffness matrix sparse assembly except pressure contributions. 
-%--------------------------------------------------------------------------
-% GLOBAL.K = sparse(indexi,indexj,global_stiffness);               
-%--------------------------------------------------------------------------
-% Compute global residual force vector except pressure contributions.
-%--------------------------------------------------------------------------
-% GLOBAL.Residual = GLOBAL.T_int - GLOBAL.external_load;
 
+
+end
+    GLOBAL.T_int = Step_globalT_int;
 % |-/
 
+
 GLOBAL.external_load_effective(BC.fixdof) = GLOBAL.T_int(BC.fixdof);
-% GLOBAL.external_load_effective(BC.tiedof) = GLOBAL.T_int(BC.tiedof);
+
+%
+% t_np1 = t_total; tn = t_np1 - dt;
+% AppliedDisp = presc_displacement(BC.dofprescribed);
+% % ramp = t_n * (AppliedDisp / GLOBAL.tMax);
+% AppliedVel = (AppliedDisp / GLOBAL.tMax);
+% AppliedAcc = AppliedVel * 0; %Only constant velocities right now
+% 
+% M  = GLOBAL.M(BC.dofprescribed,BC.dofprescribed);
+% 
+% GLOBAL.external_load_effective(BC.dofprescribed) = 
+
+
 
 % algorithm in box 6.1 gives f_n = f_ext - f_int
-GLOBAL.Residual = GLOBAL.external_load_effective - GLOBAL.T_int;
-GLOBAL.Reactions(BC.fixdof) =  GLOBAL.Residual(BC.fixdof) + GLOBAL.external_load_effective(BC.fixdof);
-% GLOBAL.Reactions(BC.tiedof) =  GLOBAL.Residual(BC.tiedof) + GLOBAL.external_load_effective(BC.tiedof);
-% 
-% ffid = fopen('GlobalForce.txt','a+');
-%     fprintf(ffid,"Global Internal Force:\n"); 
-%     for i=1:3:60
-%         fprintf(ffid,formt, GLOBAL.T_int(i:i+2));
-%     end
-%     fprintf(ffid,'\n');
-%     fprintf(ffid,"Global Reaction Force:\n"); 
-%     for i=1:3:60
-%         fprintf(ffid,formt, GLOBAL.Reactions(i:i+2));
-%     end
-%     fprintf(ffid,'\n');
-%         fprintf(ffid,"Global Residual Force:\n"); 
-%     for i=1:3:60
-%         fprintf(ffid,formt, GLOBAL.Residual(i:i+2));
-%     end
-%     fclose(ffid);
+GLOBAL.Residual              = GLOBAL.external_load - GLOBAL.T_int;
+GLOBAL.Reactions(BC.fixdof)  = GLOBAL.T_int(BC.fixdof);
+
+% GLOBAL.Reactions(BC.tiedof)  = GLOBAL.T_int(BC.tiedof); %"Reaction forces
+% on embedded nodes are from host element, which technically makes them
+% internal forces
+
+%Internal forces on embedded nodes have been accounted for in the host
+%elements so keeping these forces is redundant
+% GLOBAL.T_int(BC.tiedof) = zeros(length(BC.tiedof),1);
 
     
 end

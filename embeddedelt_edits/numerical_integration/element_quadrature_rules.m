@@ -4,7 +4,7 @@
 function QUADRATURE = element_quadrature_rules(element_type)
 switch element_type
     case 'truss2'
-         QUADRATURE.Chi = [1/sqrt(3); 1/sqrt(3)];
+         QUADRATURE.Chi = [-1/sqrt(3); 1/sqrt(3)];
          QUADRATURE.W   = [1;1];
     case 'tria3'
          QUADRATURE.Chi = [1/3 1/3];

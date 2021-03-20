@@ -4,7 +4,7 @@ properties = [7800.0 2e11 0.3 0.5 2E11 1];
 PLAST.ep = 0;
 PLAST.epbar = 0;
 X_local = [0 1; 0 0; 0 0];
-x_local = [-0.5 1; 0 0; 0 0];
+x_local = [-0.04 1; 0 0; 0 0];
 
 FEM.mesh.dof_nodes = [1,4;2,5;3,6];
 element_connectivity = [1 2];
@@ -90,31 +90,38 @@ Kap = (3*lam+2*mu)/3;
     
     nu = 0.3;
     J = lambda^(1-2*nu);
+    J = lambda;
     epsilon = log(lambda)
     
-    
-%gradients.m 
-for igauss=1:QUADRATURE.ngauss
-    DX_chi = X_local*DN_chi(:,:,igauss)';
-    DN_X   = DX_chi'\DN_chi(:,:,igauss);
-
-    Dx_chi = x_local*DN_chi(:,:,igauss)';
-    DN_x   = (Dx_chi)'\DN_chi(:,:,igauss);
+    C = Kap*(J-1) + mu*J^(-5/3)*lambda^2*(2/3)
+    Cauch = (1/J)*(lambda*log(J)-mu + mu* lambda^2)
+    Cau = (1/J)*mu*lambda^2
 
     
-     Sigma(1,1,igauss) = J^(5/3)*mu*(b(1,1)-(1/3)*Ib)+Kap*(J-1);
-end
-AveCauchy = (Sigma(1,1,1)+Sigma(1,1,2))/2
-
-dim = 3;
-lam = KINEMATICS.lambda(:,igauss);
-kinematics_gauss.n = KINEMATICS.n(:,:,igauss);
-       Le = zeros(dim,dim);
-       for j=1:dim
-           Le = Le + sqrt(lam(j))*kinematics_gauss.n(:,j)*kinematics_gauss.n(:,j)'; 
-       end
-       Le
-       fprintf('-----------------------------------------\n');
+    
+    
+% %gradients.m 
+% for igauss=1:QUADRATURE.ngauss
+%     DX_chi = X_local*DN_chi(:,:,igauss)';
+%     DN_X   = DX_chi'\DN_chi(:,:,igauss);
+% 
+%     Dx_chi = x_local*DN_chi(:,:,igauss)';
+%     DN_x   = (Dx_chi)'\DN_chi(:,:,igauss);
+% 
+%     
+%      Sigma(1,1,igauss) = J^(5/3)*mu*(b(1,1)-(1/3)*Ib)+Kap*(J-1);
+% end
+% AveCauchy = (Sigma(1,1,1)+Sigma(1,1,2))/2
+% 
+% dim = 3;
+% lam = KINEMATICS.lambda(:,igauss);
+% kinematics_gauss.n = KINEMATICS.n(:,:,igauss);
+%        Le = zeros(dim,dim);
+%        for j=1:dim
+%            Le = Le + sqrt(lam(j))*kinematics_gauss.n(:,j)*kinematics_gauss.n(:,j)'; 
+%        end
+%        Le
+%        fprintf('-----------------------------------------\n');
 
 %% Element Force and Stiffness Truss.m
 area  = properties(4);  

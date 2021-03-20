@@ -2,7 +2,7 @@
 % Read Flagshyp file
 
 %explicit_embedded_4elt_new
-file=fopen('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/job_folder/explicit_embedded_truss/energy.dat','r');
+file=fopen('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/job_folder/truss_small_strain/energy.dat','r');
 formatSpec = '%e %e %e %e';
 sizeA = [4 inf ];
 A = fscanf(file,formatSpec,sizeA);

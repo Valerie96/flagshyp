@@ -10,9 +10,7 @@ function output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KIN
 %--------------------------------------------------------------------------
 
 if (~PRO.rest && CON.incrm==0)
-    fprintf('yo\n');
     if ~exist(strcat(PRO.job_folder, "VTU"), 'dir')
-        fprintf('yo\n');
         mkdir("VTU");
     end
     cd VTU;
@@ -263,9 +261,9 @@ fprintf(fid3,'%s%s%s</PointData>\n',space,space,space);
 
 plot_stresses(GEOM,FEM,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
 % 
-plot_Lagrangian_strain(GEOM,FEM,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
+% plot_Lagrangian_strain(GEOM,FEM,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
 % 
-plot_Eulerian_strain(GEOM,FEM,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
+% plot_Eulerian_strain(GEOM,FEM,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3)
 % 
 plot_lnV(GEOM,FEM,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,fid3);
 % 

@@ -13,7 +13,7 @@ b               = kinematics.b;
 Cauchy          = (mu/J)*(b - cons.I) + (lambda/J)*log(J)*cons.I;
 
 %I bar formulation
-K               = lambda+2*mu/3;
+K               = (3*lambda+2*mu)/3;
 I1              = trace(b);
 Cauchy          = J^(-5/3)*mu*(b-(1/3)*I1*cons.I) + K*(J-1)*cons.I;
 
