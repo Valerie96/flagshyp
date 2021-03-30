@@ -1,6 +1,10 @@
+%Plotting function for Flagshyp output files
+%Replaced by ReadFlagshypOutputFile.m as of 3/22/21
+
 %Plot Stress
 clear; clc; close all;
 name="explicit_embedded_truss";
+name="embedded_truss_redundant_fixed";
 steps = 83;
 nplot = 1;
 

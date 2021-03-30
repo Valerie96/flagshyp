@@ -16,7 +16,7 @@ fclose(file);
 AbqOneHost.time = A(:,1);
 AbqOneHost.Acceleration = A(:,2:3);
 AbqOneHost.Displacement = A(:,17:18);
-AbqOneHost.Force = A(:,13:14);
+AbqOneHost.Force = A(:,14);
 AbqOneHost.Stress = A(:,15:16);
 AbqOneHost.Strain = A(:,11:12);
 AbqOneHost.AE = A(:,4);

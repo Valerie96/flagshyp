@@ -4,7 +4,7 @@
 %--------------------------------------------------------------------------
 function [GLOBAL] = effective_mass_assembly(GEOM,MAT,FEM,GLOBAL,QUADRATURE)   
 
-MassCorrect = false;
+global VolumeCorrect;
 
 %number of dimensions
 ndims = GEOM.ndime; 
@@ -46,7 +46,7 @@ for ii=1:length(FEM(1).mesh.nelem)
     %c: Loop over embedded elements
     mf = 0; mc =0;
     
-        for jj=1:length(FEM(2).mesh.nelem)
+        for jj=1:FEM(2).mesh.nelem
            jelement = jj; 
            if GEOM.embedded.ElementHost(jelement,1) == ielement
                %i: get element vol and other properties
@@ -86,7 +86,7 @@ for ii=1:length(FEM(1).mesh.nelem)
         end
     
         %d: calculate effective mass
-        if MassCorrect
+        if VolumeCorrect
             meff = me + mf - mc;
         else
             meff = me;

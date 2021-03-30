@@ -128,12 +128,12 @@ if GEOM.embedded.HostTotals(ielement,2) > 0
         if GEOM.embedded.ElementHost(eelt) == ielement
 %             fprintf("Host: %u    Guest: %u\n", ielement, eelt);
 
-testfid = fopen('Force.txt','a');
-formt = [repmat('% -1.4E ',1,3)];
-    fprintf(testfid,'\n');
-    for i=1:3:24
-        fprintf(testfid,formt, T_internal(i:3));
-    end            
+% testfid = fopen('Force.txt','a');
+% formt = [repmat('% -1.4E ',1,3)];
+%     fprintf(testfid,'\n');
+%     for i=1:3:24
+%         fprintf(testfid,formt, T_internal(i:3));
+%     end            
     
               T_internal = DistributeCorrectInternalForce_explicit(ielement,...
                            T_internal,FEM, xlocal,x0local,...
@@ -147,12 +147,12 @@ formt = [repmat('% -1.4E ',1,3)];
 %                         T_internal,FEM,xlocal,x0local,QUADRATURE,CONSTANT,GEOM,...
 %                             PLAST,KINEMATICS,MAT,DAMPING,eelt);
 % 
-    fprintf(testfid,'\n');
-    for i=1:3:24
-        fprintf(testfid,formt, T_internal(i:3));
-    end  
-    fprintf(testfid,'\n');
-    fclose(testfid);
+%     fprintf(testfid,'\n');
+%     for i=1:3:24
+%         fprintf(testfid,formt, T_internal(i:3));
+%     end  
+%     fprintf(testfid,'\n');
+%     fclose(testfid);
                         
                         
                         

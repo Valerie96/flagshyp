@@ -60,9 +60,9 @@ for ii=1:FEM(k).mesh.nelem
       case 'truss2'
        [T_internal,counter,PLAST(k),Jn_1,VolRate,~,~, ~] = element_force_truss(...
           properties,xlocal,x0local,FEM(k),PLAST(k),counter,GEOM,DAMPING,dt);
-      
-        Jn_1_vec(ielement) = 1;
-        VolRate_vec(ielement) = 1;
+%       
+%         Jn_1_vec(ielement) = 1;
+%         VolRate_vec(ielement) = 1;
       otherwise
        [T_internal,counter,PLAST_element,Jn_1,VolRate] = ...
         InternalForce_explicit(ielement,FEM,xlocal,x0local,global_nodes,...

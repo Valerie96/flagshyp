@@ -1,8 +1,14 @@
 %Calculates the embedded element effect on host element during
 %InternalForce_explicit
 
+% T_internal = zeros(FEM.mesh.n_dofs_elem,1);
+% ielement = 1;    eelt = 3; %Global elt num of embedded
+%     global_nodes    = FEM.mesh.connectivity(:,ielement);    
+%     xlocal          = GEOM.x(:,global_nodes);                     
+%     x0local         = GEOM.x0(:,global_nodes);    
+%     QUADRATURE = QUADRATURE.element;
 
-function [T_internal] = DistributeCorrectInternalForce_explicit(ielement,...
+function [T_internal] = DistributeCorrectInternalForce_OLD(ielement,...
           T_internal,FEM,xlocal,x0local,QUADRATURE,CONSTANT,GEOM,GlobT_int,...
           PLAST,KINEMATICS,MAT,DAMPING,eelt)
 
@@ -53,8 +59,8 @@ global VolumeCorrect;
     %Get the embedded element quadrature points in the host element domain
     %---------------------------------------------------------------------------
     
-    %Get the number of Gauss points in the embedded element
-    nGp = GEOM.embedded.HostTotals(ielement,1)/GEOM.embedded.HostTotals(ielement,2);
+    %Get the number of Gauss points in the element
+    nGp = GEOM.embedded.HostTotals(ielement,1);
     
     %Get host element nodes
     h_connectivity = FEM(1).mesh.connectivity(:,ielement);
@@ -66,29 +72,10 @@ global VolumeCorrect;
     xelocal  = GEOM.x(:,e_connectivity);                     
     e_nodes_zeta = GEOM.embedded.Embed_Zeta(:,e_connectivity);
     
-    QUADRATURE_E = QUADRATURE(2); %Quadrature of embedded elt
-    QUADRATURE_EH = QUADRATURE(2); %Quadrature of embedded elt in the host domain 
-    
-    %Initialize KINEMATICS_EH to use the (8) shape functions of the host
-    %and the (2) gauss points of the embedded element
-        % Spatial gradient of the shape functions.
-        KINEMATICS_EH.DN_x   = zeros(GEOM.ndime,FEM(1).mesh.n_nodes_elem,nGp);  
-        % Jacobian of the mapping between spatial and isoparametric domains.
-        KINEMATICS_EH.Jx_chi = zeros(nGp,1);  
-        % Deformation gradient.
-        KINEMATICS_EH.F      = zeros(GEOM.ndime,GEOM.ndime, nGp);                 
-        % Jacobian of the deformation gradient.
-        KINEMATICS_EH.J      = zeros(nGp ,1);            
-        % Left Cauchy-Green strain tensor (b).
-        KINEMATICS_EH.b      = zeros(GEOM.ndime,GEOM.ndime, nGp);   
-        % First invariant of b.
-        KINEMATICS_EH.Ib     = zeros(nGp,1);      
-        % Principal stretches.
-        KINEMATICS_EH.lambda = zeros(GEOM.ndime,nGp);                
-        % Spatial principal directions.
-        KINEMATICS_EH.n      = zeros(GEOM.ndime,GEOM.ndime,nGp);
-        
-    
+    QUADRATURE_E = QUADRATURE(2); %Quadrature of embedded elt (assuming same element type as host)
+    QUADRATURE_EH = QUADRATURE(1); %Quadrature of embedded elt in the host domain 
+    KINEMATICS_EH = KINEMATICS(1);
+
 
     gp_x = zeros(3,2); 
     gp_zeta = zeros(3,2);  
@@ -117,51 +104,61 @@ global VolumeCorrect;
                 fprintf("Space conversion failure: host %u, guest %u, gp %u\n",ielement, eelt, gp);
                 fprintf("     Error amount: %d %d %d\n", abs(check(1)), abs(check(2)), abs(check(3)));
             end  
-            
-
  
     end
+    
+%     gp_zeta = zeros(3,8);  
+%     for gp = 1: nGp
+%        
+%         %Get the coordinates of the gauss point in the embedded space (LE)
+%         gp_nu = QUADRATURE_E.element.Chi(gp,:);
+%         %Convert local 1D gp coordinate to global xyz
+%         
+%         dx = x_e(:,2) - x_e(:,1);        
+%         dz = gp_nu * dx + x_e(:,1);
+%         gp_glob = dz;
+%         %Find the gauss point coordinates in the host space (LH) by mapping
+%         %from LE to LH using the coordinates of the embedded nodes in LH
+%         %Or you could actually just get it from EM.interpolation.element.N(:,gp)
+%         N_nu_a = shape_function_values_at(gp_glob, 'hex'); %mapping with shape functions
+%  
+%         %z(n) = [N][ze] = sum(N1*ze1 + 
+%         %Doing this for all gauss points at once, so loop through nGp times
+%         for i=1:nGp
+%            gp_zeta(:,gp) = gp_zeta(:,gp) + N_nu_a(i,1)*e_nodes_zeta(:,i); 
+%         end
+% 
+%         %Test accuracy of that conversion 
+%             %Find gp_x from gp_nu and gp_zeta
+%             gp_xz = find_xyz_in_host(gp_zeta(:,gp), x_h);
+%             gp_xn = find_xyz_in_truss(gp_nu, x_e);
+%             check = gp_xz - gp_xn;
+%             if abs(check(1))>1E-10 || abs(check(2))>1E-10 || abs(check(3)) >1E-10
+%                 fprintf("Space conversion failure: host %u, guest %u, gp %u\n",ielement, eelt, gp);
+%                 fprintf("     Error amount: %d %d %d\n", abs(check(1)), abs(check(2)), abs(check(3)));
+%             end           
+%         end
  
     
     %----------------------------------------------------------------------
     %Step B 
-    %Compute deformation measures at embedded element quad points in host
-    %element space
+    %Compute deformation measures at quad points
     %----------------------------------------------------------------------
     
-    QUADRATURE_EH.element.Chi = gp_zeta;
-    
-Ne      = zeros(FEM(1).mesh.n_nodes_elem, nGp);
-DNe_chi = zeros(GEOM.ndime,FEM(1).mesh.n_nodes_elem, nGp);
-
-for igauss = 1:nGp 
-    interpolation       = shape_functions_library(gp_zeta(:,igauss),...
-                                                   FEM(1).mesh.element_type);
-    Ne(:,igauss)        = interpolation.N;
-    DNe_chi(:,:,igauss) = interpolation.DN_chi;
-end
-    
-INTERPOLATION_EH.N = Ne;
-INTERPOLATION_EH.DN_chi = DNe_chi; 
-
-
-    KINEMATICS_EH = gradients(xlocal,x0local,INTERPOLATION_EH.DN_chi,...
+    QUADRATURE_EH.element.Chi = gp_zeta';
+    KINEMATICS_EH = gradients(xlocal,x0local,FEM(1).interpolation.element.DN_chi,...
              QUADRATURE_EH.element,KINEMATICS_EH); 
          
     KINEMATICS_A = gradients(xlocal,x0local,FEM(1).interpolation.element.DN_chi,...
-             QUADRATURE(1).element,KINEMATICS(1)); %This is just a reference to what kinematics for the host element are normaly
+             QUADRATURE(1).element,KINEMATICS(1));
          
 %--------------------------------------------------------------------------
-%Find Embedded element orientation wrt the global csys
-L       = norm(x_e(:,2) - x_e(:,1));  
-dx      = xelocal(:,2) - xelocal(:,1);        
-l       = norm(dx);                           
-n       = dx/l;  
+    
 
 %--------------------------------------------------------------------------
 % Gauss quadrature integration loop. Loop of embedded element Gauss Points
 %--------------------------------------------------------------------------    
-T_C = zeros(FEM(1).mesh.n_dofs_elem, 1);
+T_C = zeros(GEOM.ndime*8, 1);
     for igauss = 1:nGp
         
         %Step B
@@ -170,6 +167,12 @@ T_C = zeros(FEM(1).mesh.n_dofs_elem, 1);
         %----------------------------------------------------------------------
         kinematics_gauss = kinematics_gauss_point(KINEMATICS_EH,igauss);   
         
+
+%         %----------------------------------------------------------------------
+%         % Compute contribution to (internal) force vector.
+%         %----------------------------------------------------------------------
+%         T = Cauchy_eh*kinematics_gauss.DN_x;
+%         T_e = T(:)*JW;
 
         
         %Step D
@@ -180,23 +183,22 @@ T_C = zeros(FEM(1).mesh.n_dofs_elem, 1);
         [Cauchy_C,PLAST_h,...
          plast_gauss] = Cauchy_type_selection(kinematics_gauss,properties_h,...
                                               CONSTANT,dim,matyp_h,PLAST,igauss);
-%         %----------------------------------------------------------------------
-%         % Obtain elasticity tensor (for incompressible or nearly incompressible, 
-%         % only deviatoric component).
-%         %----------------------------------------------------------------------   
-%         if(explicit==0)
-%             c = elasticity_modulus_selection(kinematics_gauss,properties_h,CONSTANT,...
-%                                           dim,matyp_h,PLAST_h,plast_gauss,igauss);
-%         else
-%             c = 0;
-%         end
+        %----------------------------------------------------------------------
+        % Obtain elasticity tensor (for incompressible or nearly incompressible, 
+        % only deviatoric component).
+        %----------------------------------------------------------------------   
+        if(explicit==0)
+            c = elasticity_modulus_selection(kinematics_gauss,properties_h,CONSTANT,...
+                                          dim,matyp_h,PLAST_h,plast_gauss,igauss);
+        else
+            c = 0;
+        end
         %----------------------------------------------------------------------
         % Add pressure contribution to stresses and elasticity tensor.
         %----------------------------------------------------------------------    
-%         [Cauchy_C,c] = mean_dilatation_pressure_addition(Cauchy_C,c,CONSTANT,pressure_h,matyp_h);    
+        [Cauchy_C,c] = mean_dilatation_pressure_addition(Cauchy_C,c,CONSTANT,pressure_h,matyp_h);    
         %----------------------------------------------------------------------
-        
-        
+
         %----------------------------------------------------------------------
         % Compute numerical integration multipliers.
         %----------------------------------------------------------------------
@@ -223,7 +225,7 @@ T_C = zeros(FEM(1).mesh.n_dofs_elem, 1);
         N_node1 = shape_function_values_at(e_nodes_zeta(:,1), FEM(1).mesh.element_type);
         N_node2 = shape_function_values_at(e_nodes_zeta(:,2), FEM(1).mesh.element_type);
         
-        %Force from embedded nodes distribted over host nodes
+        %Force from embedded node 1 distribted over host nodes
         T_e1 = zeros(GEOM.ndime*8, 1);
         T_e2 = zeros(GEOM.ndime*8, 1);
         for i = 1:3:24

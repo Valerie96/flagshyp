@@ -1,12 +1,7 @@
 %Read Abaqus Files
 %Read One Host with One Embedded Truss
-function [AbqEHost, AbqETruss, AbqE] = ReadHostTruss(name)
-% file = fopen('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/TestingFlagshyp/OneHostOneTrussResults.txt','r');
-
-basedir=('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/TestingFlagshyp');
-f = strcat(basedir,'/', name, '.txt');
-file =fopen(f, 'r');
-
+function [AbqEHost, AbqETruss, AbqE] = ReadHost2Truss()
+file = fopen('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/TestingFlagshyp/OneHostOneTrussResults.txt','r');
 for i=1:4
     tline = fgetl(file);
 end

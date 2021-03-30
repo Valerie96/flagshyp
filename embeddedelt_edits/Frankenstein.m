@@ -5,7 +5,9 @@ clear; clc; close all;
 inputfile='explicit_3D.dat';
 % inputfile='seperate_embedded.dat';
 % inputfile='truss_only.dat';
-inputfile='explicit_embedded_truss.dat';
+% inputfile='explicit_embedded_truss.dat';
+inputfile='embedded_truss_redundant_fixed.dat';
+% inputfile='embedded_2truss.dat';
 % inputfile='truss_small_strain.dat';
 basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
 simtime = 0.01;
@@ -14,10 +16,12 @@ DAMPING.b1 = 0.035; %Linear bulk viscosity damping
 DAMPING.b2 = 0; %Quadratic bulk viscosity damping
 
 ansmlv='y'; 
-global explicit ;
+global explicit;
 explicit = 1;
 global EmbedElt;
 EmbedElt = 1;
+global VolumeCorrect;
+VolumeCorrect = 1;
 tic
 %% Input_data_and_initilaization.m
 
@@ -144,6 +148,8 @@ tic
 %       - this is done in the intialisation.m file, line 68
 CON.xlamb = 0;
 CON.incrm = 0; 
+
+
 output(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,0,0);
 CON.incrm = CON.incrm + 1; 
 
@@ -292,6 +298,7 @@ while(Time<tMax)
 %--------------------------------------------------------------
   EnergyIntForce = GLOBAL.T_int;
    EnergyIntForce(BC.tiedof) = zeros(length(BC.tiedof),1);
+   
 % step 11 check energy
   [energy_value, max_energy] = check_energy_explicit(PRO,FEM,CON,BC, ...
       GLOBAL,disp_n, disp_prev,EnergyIntForce,fi_prev,...

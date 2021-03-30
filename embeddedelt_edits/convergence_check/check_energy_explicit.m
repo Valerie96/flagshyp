@@ -32,7 +32,8 @@ Wext_n = Wext_n + 0.5 * sum;
 
 % kinetic energy
 WKE = 0;
-for i=1:FEM(1).mesh.n_dofs
+% for i=1:FEM(1).mesh.n_dofs
+for i=1:FEM(1).mesh.n_dofs_elem
     WKE = WKE + GLOBAL.M(i,i) *( GLOBAL.velocities(i) * GLOBAL.velocities(i));
 end
 WKE = WKE * 0.5;
