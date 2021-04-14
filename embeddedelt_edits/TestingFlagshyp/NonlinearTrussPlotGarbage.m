@@ -23,7 +23,7 @@ Cauchy1 = lambda.*0;
 Cauchy2 = ((1./J).*(1-2.*nu).*lambda.^((2.*(1-nu)))).*(lam.*log(J)-mu) + mu.*lambda.^3./J;
 
 Cauchy3 = mu.*(2.*lambda.^2-1);
-% Cauchy3 = Kap.*(J-1)+mu.*J.^(-5/3)*(2/3).*lambda.^2;
+% Cauchy3 = Kap.*(J-1)+mu.*J.^(-5/3).*(lambda.^2-(1/3)*lambda.^2);
 % Cauchy4 = (1./J).*(2.*mu.*nu.*log(lambda) + mu.*(lambda + 2*nu-1));
 Cauchy4 = lam.*log(lambda)+mu.*(lambda.^2 - 1);
 
@@ -55,3 +55,13 @@ xlabel("lambda (stretch)");
 % legend('show');
 % ylabel("Kirchhoff Stress (Pa)");
 % xlabel("Normal Strain");
+
+J      = lambda.^(1-2*nu);
+sigma_1d = Kap.*(J-1)+mu.*J.^(-5/3).*(lambda.^2-(1/3)*lambda.^2);
+figure();
+hold on; grid on;
+plot(lambda, sigma_1d, 'DisplayName','Flagshyp'); 
+plot(Ablam, Absig, 'o', 'DisplayName', 'abaqus');
+legend('show');
+ylabel("Cauchy Stress (Pa)");
+xlabel("lambda (stretch)");

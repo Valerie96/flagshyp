@@ -181,7 +181,7 @@ function [numbers,n_nodes,nodeinfo1,nodeinfo2,nelttype,n_elt,npts,...
         switch eltype
             case 'hexa8'
                  for i = 1:n_elt(xx)
-                    text = fgetl(fid);
+                    trash = fgetl(fid);
                  end
                 for i = 1:n_elt(xx)
                    for j = 1:npts(xx)
@@ -192,10 +192,10 @@ function [numbers,n_nodes,nodeinfo1,nodeinfo2,nelttype,n_elt,npts,...
                 end
             case 'truss2'
                  for i = 1:n_elt(xx)
-                    text = fgetl(fid);
-                 end
-                 text = fgetl(fid);             
+                    trash = fgetl(fid);
+                 end       
                  for i = 1:n_elt(xx)
+                     text = fgetl(fid); 
                     eltinfo2(i,:) = sscanf(text, "%f %*c %*c %f"); 
                  end
         end

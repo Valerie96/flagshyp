@@ -1,14 +1,14 @@
 %A bunch of pieces of flagshyp smashed together so I can actually figure
 %out what all of the variables are. This may be a disaster
 clear; clc; close all; 
-% inputfile='explicit_embedded3D_new.dat';
 inputfile='explicit_3D.dat';
 % inputfile='seperate_embedded.dat';
 % inputfile='truss_only.dat';
 % inputfile='explicit_embedded_truss.dat';
 inputfile='embedded_truss_redundant_fixed.dat';
-% inputfile='embedded_2truss.dat';
+inputfile='embedded_2truss_corrected.dat';
 % inputfile='truss_small_strain.dat';
+inputfile='explicit_wShear.dat';
 basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
 simtime = 0.01;
 outputfreq=1;
@@ -19,9 +19,9 @@ ansmlv='y';
 global explicit;
 explicit = 1;
 global EmbedElt;
-EmbedElt = 1;
+EmbedElt = 0;
 global VolumeCorrect;
-VolumeCorrect = 1;
+VolumeCorrect = 0;
 tic
 %% Input_data_and_initilaization.m
 

@@ -2,7 +2,7 @@
 %InternalForce_explicit
 
 
-function [T_internal] = DistributeCorrectInternalForce_explicit(ielement,...
+function [T_internal] = DistributeCorrectInternalForce_explicit3(ielement,...
           T_internal,FEM,xlocal,x0local,QUADRATURE,CONSTANT,GEOM,GlobT_int,...
           PLAST,KINEMATICS,MAT,DAMPING,eelt)
 
@@ -88,7 +88,7 @@ global VolumeCorrect;
         % Spatial principal directions.
         KINEMATICS_EH.n      = zeros(GEOM.ndime,GEOM.ndime,nGp);
         
-    
+    KINEMATICS_E = KINEMATICS(2);
 
     gp_x = zeros(3,2); 
     gp_zeta = zeros(3,2);  
@@ -151,6 +151,17 @@ INTERPOLATION_EH.DN_chi = DNe_chi;
     KINEMATICS_A = gradients(xlocal,x0local,FEM(1).interpolation.element.DN_chi,...
              QUADRATURE(1).element,KINEMATICS(1)); %This is just a reference to what kinematics for the host element are normaly
          
+    area_t = properties_e(4);   
+    
+    %If Host Element is Neo Hookean (need to change if otherwise)
+    lam=properties_h(3);
+    mu=properties_h(2);
+    K=lam+(2*mu/3);
+    nu_h   = (3*K-2*mu)/(2*(3*K+mu));
+    E_h    = 9*K*mu/(3*K+mu);
+    
+    KINEMATICS_E = gradientsTruss(xelocal,x_e,FEM(2).interpolation.element.DN_chi,...
+             QUADRATURE_E.element,KINEMATICS_E,nu_h,area_t);      
 %--------------------------------------------------------------------------
 %Find Embedded element orientation wrt the global csys
 L       = norm(x_e(:,2) - x_e(:,1));  
@@ -161,14 +172,15 @@ n       = dx/l;
 %--------------------------------------------------------------------------
 % Gauss quadrature integration loop. Loop of embedded element Gauss Points
 %--------------------------------------------------------------------------    
-T_C = zeros(FEM(1).mesh.n_dofs_elem, 1);
+% T_C = zeros(FEM(1).mesh.n_dofs_elem, 1);
+TC = zeros(FEM(2).mesh.n_dofs_elem, 1);
     for igauss = 1:nGp
         
         %Step B
         %----------------------------------------------------------------------
         % Extract kinematics at the particular Gauss point.
         %----------------------------------------------------------------------
-        kinematics_gauss = kinematics_gauss_point(KINEMATICS_EH,igauss);   
+        kinematics_gauss = kinematics_gauss_point(KINEMATICS_E,igauss);   
         
 
         
@@ -200,13 +212,24 @@ T_C = zeros(FEM(1).mesh.n_dofs_elem, 1);
         %----------------------------------------------------------------------
         % Compute numerical integration multipliers.
         %----------------------------------------------------------------------
-        JW = kinematics_gauss.Jx_chi*QUADRATURE_EH.element.W(igauss)*...
+        JW = kinematics_gauss.Jx_chi*QUADRATURE_E.element.W(igauss)*...
              thickness_plane_stress(properties_h,kinematics_gauss.J,matyp_h);
         %----------------------------------------------------------------------
         % Compute contribution to (internal) force vector.
         %----------------------------------------------------------------------
-        T = Cauchy_C*kinematics_gauss.DN_x;
-        T_C = T_C + T(:)*JW;
+        
+        %Assuming both elements are neo hookean materials
+        properties_eh = properties_e; %eh is the same as e, except that nu and E are replaced bu nu and E of the host element
+        properties_eh(1) = properties_h(1);
+        properties_eh(2) = E_h;
+        properties_eh(3) = nu_h;
+        
+        [TC,~,PLAST,~,~,Cauchy,~,CauchyTensor] = element_force_truss(...
+          properties_eh,xelocal,x_e,FEM(2),PLAST,1,GEOM,DAMPING,1);
+        
+%         T = Cauchy_C*kinematics_gauss.DN_x;
+%         T_C = T_C + T(:)*JW;
+%         TC = TC + T(:)*JW;
         
 
         
@@ -232,6 +255,17 @@ T_C = zeros(FEM(1).mesh.n_dofs_elem, 1);
         end
         T_e = T_e1 + T_e2;
     
+        
+       %Do the same for the correction force
+        T_C1 = zeros(GEOM.ndime*8, 1);
+        T_C2 = zeros(GEOM.ndime*8, 1);
+        for i = 1:3:24
+           T_C1(i:i+2) = TC(1:3)*N_node1((i-1)/3 + 1); 
+           T_C2(i:i+2) = TC(4:6)*N_node2((i-1)/3 + 1); 
+        end
+        T_C = T_C1 + T_C2;
+        
+        
         %Step E
         %----------------------------------------------------------------------
         % Compute equivilant (internal) force vector of the host element.
