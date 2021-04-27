@@ -3,7 +3,7 @@
 function [AbqEHost, AbqETruss, AbqE] = ReadHostTruss(name)
 % file = fopen('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/TestingFlagshyp/OneHostOneTrussResults.txt','r');
 
-basedir=('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/TestingFlagshyp');
+basedir=('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/TestingFlagshyp/PlotAbaqusComparisons');
 f = strcat(basedir,'/', name, '.txt');
 file =fopen(f, 'r');
 

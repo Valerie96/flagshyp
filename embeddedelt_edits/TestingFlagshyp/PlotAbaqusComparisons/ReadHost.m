@@ -1,7 +1,11 @@
 %Read Abaqus Files
 %Read One Host
-function AbqOneHost = ReadHost()
-file = fopen('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/TestingFlagshyp/OneHostNHResutls.txt','r');
+function AbqOneHost = ReadHost(name)
+% file = fopen('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/TestingFlagshyp/OneHostNHResutls.txt','r');
+
+basedir=('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/TestingFlagshyp/PlotAbaqusComparisons');
+f = strcat(basedir,'/', name, '.txt');
+file =fopen(f, 'r');
 for i=1:4
     tline = fgetl(file);
 end
