@@ -4,12 +4,14 @@
 %--------------------------------------------------------------------------
 function [GLOBAL] = effective_mass_assembly(GEOM,MAT,FEM,GLOBAL,QUADRATURE)   
 
+
 global VolumeCorrect;
 
 %number of dimensions
 ndims = GEOM.ndime; 
 massSize = ndims*GEOM.npoin;
-LumpedMass = zeros(massSize,massSize);
+LumpedMass_eff = zeros(massSize,massSize); %Embedded element mass included in host element mass
+LumpedMass_act = zeros(massSize,massSize); %Host elements without embedded element mass
 
 
 M_total = 0;
@@ -44,9 +46,9 @@ for ii=1:length(FEM(1).mesh.nelem)
     me = rho * Ve;
     
     %c: Loop over embedded elements
-    mf = 0; mc =0;
+    mf_tot = 0; mc =0;
     
-        for jj=1:FEM(2).mesh.nelem
+        for jj=1:GEOM.embedded.HostTotals(ielement,2)
            jelement = jj; 
            if GEOM.embedded.ElementHost(jelement,1) == ielement
                %i: get element vol and other properties
@@ -63,9 +65,9 @@ for ii=1:length(FEM(1).mesh.nelem)
                
                 %ii: Calculate embedded element mass
                     mf = rho_f * Vf;
-                    
+                    mf_tot = mf_tot + mf;
                 %iii: Calculate correction mass 
-                    mc = rho * Vf;
+                    mc = mc + rho * Vf;
                     
            %***Until I work out removing the embedded nodes as dof, I need to
            %     add them to the mass matrix
@@ -73,12 +75,13 @@ for ii=1:length(FEM(1).mesh.nelem)
                     Meff = (mf/n_nodes_elem_f);
 
                     %f: form diagonal mass matrix
-                    Me = eye(n_nodes_elem_f* ndims,n_nodes_elem_f* ndims) * Meff;
-
-        
+                    Identity = eye(n_nodes_elem_f* ndims,n_nodes_elem_f* ndims);
+                    Me = Identity * Meff;
+                    
                     %g: scatter mass matrix to global 
                     global_dof = FEM(2).mesh.dof_nodes(:,global_nodes_f);
-                    LumpedMass(global_dof,global_dof) = LumpedMass(global_dof,global_dof) + Me;
+                    LumpedMass_eff(global_dof,global_dof) = LumpedMass_eff(global_dof,global_dof) + Me;
+                    LumpedMass_act(global_dof,global_dof) = LumpedMass_act(global_dof,global_dof) + Me;
 
                     
            end
@@ -87,32 +90,37 @@ for ii=1:length(FEM(1).mesh.nelem)
     
         %d: calculate effective mass
         if VolumeCorrect
-            meff = me + mf - mc;
+            meff = me + mf_tot - mc;
+            mact = me - mc;
         else
-            meff = me;
+            meff = me + mf_tot;
+            mact = me;
         end
-        M_total = M_total + meff + mf;
+        M_total = M_total + mact + mf_tot;
         
         %e: divide mass equally among nodes
         Meff = (meff/n_nodes_elem);
+        Mact = (mact/n_nodes_elem);
         
         %f: form diagonal mass matrix
-        Me = eye(n_nodes_elem* ndims,n_nodes_elem* ndims) * Meff;
+        Me_eff = eye(n_nodes_elem* ndims,n_nodes_elem* ndims) * Meff;
+        Me_act = eye(n_nodes_elem* ndims,n_nodes_elem* ndims) * Mact;
 
         
         %g: transform and scatter scatter mass matrix to global 
         global_dof = FEM(1).mesh.dof_nodes(:,global_nodes);
-        LumpedMass(global_dof,global_dof) = LumpedMass(global_dof,global_dof) + Me;
-        
+        LumpedMass_eff(global_dof,global_dof) = LumpedMass_eff(global_dof,global_dof) + Me_eff;
+        LumpedMass_act(global_dof,global_dof) = LumpedMass_act(global_dof,global_dof) + Me_act;
         
 end % loop on elements
 
-GLOBAL.M=LumpedMass;
+GLOBAL.M    = LumpedMass_eff;
+GLOBAL.M_KE = LumpedMass_act;
 fprintf('Total mesh mass is: %15.5f \n', M_total);
 
 M_total = 0 ;
 for i = 1:massSize
-    M_total = M_total + LumpedMass(i,i);
+    M_total = M_total + LumpedMass_act(i,i);
 end
 fprintf('Sum Mass: %15.5f \n', M_total/3);
 

@@ -7,6 +7,9 @@ function [GEOM,LOAD,GLOBAL,PLAST,KINEMATICS] = ...
 %--------------------------------------------------------------------------    
 % Initialisation of internal variables for plasticity.
 %--------------------------------------------------------------------------    
+global explicit  % needs to be defined in order for explicit to be global
+global EmbedElt;
+global VolumeCorrect;
 
 %|-/ 
 GEOM.element_num = zeros(3,GEOM.total_n_elets); nel=0;
@@ -65,7 +68,6 @@ GLOBAL.Reactions     = zeros(mesh_dof,1);
 
 
 
-global explicit  % needs to be defined in order for explicit to be global
 % Define velocity and accelerations for explicit method;
 if (explicit == 1)
    % GLOBAL.velocities = zeros(GEOM.npoin,GEOM.ndime);
@@ -113,10 +115,15 @@ if(explicit == 1)
     GLOBAL.Residual = GLOBAL.T_int - GLOBAL.external_load;
 
 %     if ~isempty(FEM(1).mesh.embedded) || ~isempty(FEM(2).mesh.embedded)
-global EmbedElt;
+
     if (EmbedElt == 1)
         GEOM = inverse_mapping(GEOM,FEM,BC.tienodes);
-        [GLOBAL] = effective_mass_assembly(GEOM,MAT,FEM,GLOBAL,QUADRATURE);
+        
+%         if VolumeCorrect
+            [GLOBAL] = effective_mass_assembly(GEOM,MAT,FEM,GLOBAL,QUADRATURE);
+%         else
+%             [GLOBAL] = lumped_mass_assembly(GEOM,MAT,FEM,GLOBAL,QUADRATURE);
+%         end
 
 
     else

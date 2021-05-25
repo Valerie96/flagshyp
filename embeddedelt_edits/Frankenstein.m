@@ -1,29 +1,32 @@
 %A bunch of pieces of flagshyp smashed together so I can actually figure
 %out what all of the variables are. This may be a disaster
 clear; clc; close all; 
-inputfile='explicit_3D.dat';
-% inputfile='seperate_embedded.dat';
+basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
+% inputfile='explicit_3D_LrgStrain.dat';
 % inputfile='truss_only.dat';
-% inputfile='explicit_embedded_truss.dat';
-inputfile='embedded_truss_redundant_fixed.dat';
-% inputfile='truss_small_strain.dat';
+inputfile='explicit_embedded_truss.dat';
+% inputfile='embedded_truss_redundant_fixed.dat';
+% % inputfile='truss_small_strain.dat';
 inputfile='explicit_wShear.dat';
 inputfile='embedded_truss_wShear_corrected.dat';
-basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
-inputfile='embed_1h_100t.dat';
-inputfile='explicit_2h.dat';
-simtime = 0.01;
+% inputfile='embedded_2truss_corrected.dat';
+% inputfile='embed_1h_25t.dat';
+% inputfile='embed_1h_25t_correct.dat';
+% inputfile='explicit_3D.dat';
+% inputfile='embed_1h_100t.dat';
+simtime =  0.01;
 outputfreq=1;
 DAMPING.b1 = 0.035; %Linear bulk viscosity damping
+% DAMPING.b1 = 0.18; %Linear bulk viscosity damping
 DAMPING.b2 = 0; %Quadratic bulk viscosity damping
 
 ansmlv='y'; 
 global explicit;
 explicit = 1;
 global EmbedElt;
-EmbedElt = 0;
+EmbedElt = 1;
 global VolumeCorrect;
-VolumeCorrect = 0;
+VolumeCorrect = 1;
 tic
 %% Input_data_and_initilaization.m
 
@@ -182,7 +185,9 @@ nsteps_plot = round(nSteps/nPlotSteps);
 
 % start explicit loop
 while(Time<tMax)
-
+%     if time_step_counter <=5
+%         dt=8E-6;
+%     end
     t_n       = Time;
     t_np1     = Time + dt;
     Time      = t_np1; % update the time by adding full time step
@@ -245,7 +250,6 @@ while(Time<tMax)
        disp_n(BC.fixdof) = GEOM.x(BC.fixdof) - GEOM.x0(BC.fixdof);  
 %      |-/
 %      Update coodinates of embedded nodes (if there are any)  
-%           if ~isempty(FEM(1).mesh.embedded) || ~isempty(FEM(2).mesh.embedded)
           if EmbedElt == 1
               [GEOM.x,velocities_half, GLOBAL.accelerations ] = update_embedded_displacements_explicit(BC.tiedof, BC.tienodes,...
                     FEM,GEOM, velocities_half, GLOBAL.accelerations); 
@@ -267,7 +271,7 @@ while(Time<tMax)
 % %----------------------------------------------------------------   
 
   % save internal force, to be used in energy computation
-  fi_prev = GLOBAL.T_int;  fi_prev(BC.tiedof) = zeros(length(BC.tiedof),1);
+  fi_prev = GLOBAL.T_int;  %fi_prev(BC.tiedof) = zeros(length(BC.tiedof),1);
   fe_prev = GLOBAL.external_load + GLOBAL.Reactions;
   
 %step 8 - getForce
@@ -277,7 +281,9 @@ while(Time<tMax)
   % updated stable time increment based on current deformation     
   dt_old=dt;
   dt = prefactor * CalculateTimeStep(FEM(1),GEOM,MAT(1),DAMPING);
-  
+%   if time_step_counter <=5
+%         dt=8E-6;
+%     end
 %step 9 - compute accelerations.       
   AccOld = GLOBAL.accelerations;
   GLOBAL.accelerations = inv(GLOBAL.M)*(GLOBAL.external_load_effective - GLOBAL.T_int);
@@ -303,7 +309,7 @@ while(Time<tMax)
    
 % step 11 check energy
   [energy_value, max_energy] = check_energy_explicit(PRO,FEM,CON,BC, ...
-      GLOBAL,disp_n, disp_prev,EnergyIntForce,fi_prev,...
+      GLOBAL,disp_n, disp_prev,GLOBAL.T_int,fi_prev,...
       GLOBAL.external_load + GLOBAL.Reactions,fe_prev,Time);
   
 %Plot every # steps

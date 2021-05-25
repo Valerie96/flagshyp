@@ -28,7 +28,6 @@ end
 
 for nt = 1:FEM(1).n_elet_type 
 for ielement=1:FEM(nt).mesh.nelem  
-
     %----------------------------------------------------------------------
     % Temporary variables associated with a particular element
     % ready for stress outpue calculation.
@@ -60,9 +59,10 @@ for ielement=1:FEM(nt).mesh.nelem
            fprintf(fid3,'%.5e %.5e %.5e\n',0,0,0);
         end
         
-        fprintf(fid3,'%s%s%s%s</DataArray>\n',space,space,space,space); 
-       return
+ 
+       continue;
      end
+
     
     KINEMATICS(nt) = gradients(xlocal,x0local,FEM(nt).interpolation.element.DN_chi,...
                           QUADRATURE(nt).element,KINEMATICS(nt))  ;     
@@ -87,6 +87,7 @@ for ielement=1:FEM(nt).mesh.nelem
     
     % take care of ln(0) = -Inf 
     switch FEM(nt).mesh.element_type 
+
        case 'quad4'
        if QUADRATURE(nt).element.ngauss == 4 % the 2 is b/c it is the largest e-value from matlab 
            V=  sqrt(b_e_values(1,1))*b_e_vectors(:,1)*b_e_vectors(:,1)'+ ...
@@ -149,6 +150,11 @@ for ielement=1:FEM(nt).mesh.nelem
     % Print Logrithmic Strain.
     %----------------------------------------------------------------------   
     switch FEM(nt).mesh.element_type 
+        case 'truss2'
+            %Assuming this is 3D
+        fprintf(fid3,'%s%s%s%s%s%.10e %.10e %.10e %.10e  %.10e %.10e %.10e  %.10e %.10e\n',space,space,space,space,space,...
+                   lnVt,0,0,0,0,0);  
+          
         case'quad4'
        if QUADRATURE(nt).element.ngauss == 4
            fprintf(fid3,'%s%s%s%s%s%.10e %.10e %.10e %.10e \n',space,space,space,space,space,...

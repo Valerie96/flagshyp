@@ -59,6 +59,7 @@ for ii=1:FEM(1).mesh.nelem
 end % loop on elements
 
 GLOBAL.M=LumpedMass;
+GLOBAL.M_KE=LumpedMass;
 fprintf('Total mesh mass matrix is: %15.5f \n', M_total);
 
 M_total = 0 ;

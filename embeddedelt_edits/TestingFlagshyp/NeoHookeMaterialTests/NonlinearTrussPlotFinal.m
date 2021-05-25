@@ -38,7 +38,7 @@ for k=1:5
     
     
     J = lambda.^(1-2*nu);
-%     J = ones(length(lambda),1);
+
     for i = 1:length(lambda)
         b(:,:,i) = [lambda(i)^2 0 0; 0 lambda(i)^(-2*nu) 0; 0 0 lambda(i)^(-2*nu)]; 
         s(:,:,i) = (1/3)*(3*lam+2*mu)*(J(i)-1)*eye(3) + mu*(J(i)^(-5/3))*(b(:,:,i) - (1/3)*trace(b(:,:,i))*eye);
@@ -47,6 +47,14 @@ for k=1:5
 
 end
 
+%Ritika's Material
+mu=3000; lam=3000; nu = lam/(2*(lam+mu)); Kap = (3*lam+2*mu)/3; E = mu*(3*lam+2*mu)/(lam+mu);
+ sigg = zeros(length(lambda),1);
+    for i = 1:length(lambda)
+        b(:,:,i) = [lambda(i)^2 0 0; 0 lambda(i)^(-2*nu) 0; 0 0 lambda(i)^(-2*nu)]; 
+        s(:,:,i) = (1/3)*(3*lam+2*mu)*(J(i)-1)*eye(3) + mu*(J(i)^(-5/3))*(b(:,:,i) - (1/3)*trace(b(:,:,i))*eye);
+        sigg(i,1) = s(1,1,i);
+    end
 
 fid = fopen('AbaqusMaterialTests.txt');
     for i=1:4
@@ -86,14 +94,20 @@ figure();
 hold on; grid on;
 plot(Ab_LE4, Dyneema, 'mo', 'DisplayName', 'abaqus mat4 (E=2E9, nu=0.3)');
 plot(Ab_LE5, Random, 'ko', 'DisplayName', 'abaqus mat5 (E=2E9, nu=0.3)');
-
-
 plot(epsilon, sig1(:,4), 'm','LineWidth',2, 'DisplayName', 'Analytic mat4');
 plot(epsilon, sig1(:,5), 'k','LineWidth',2, 'DisplayName', 'Analytic mat5');
 legend('show');
 ylabel("Cauchy Stress (Pa)");
 xlabel("LE (log strain)");
 
+figure();
+hold on; grid on;
+plot(Ab_LE4, Dyneema, 'mo', 'DisplayName', 'abaqus mat4 (E=2E9, nu=0.3)');
+plot(epsilon, sig1(:,4), 'm','LineWidth',2, 'DisplayName', 'Analytic mat4');
+plot(epsilon, sigg(:,1), 'c','LineWidth',2, 'DisplayName', 'Ritikas');
+legend('show');
+ylabel("Cauchy Stress (Pa)");
+xlabel("LE (log strain)");
 
 figure();
 hold on; grid on;
@@ -117,6 +131,8 @@ plot(epsilon, sig1(:,2), 'r','LineWidth',2, 'DisplayName', 'Analytic mat2');
 plot(epsilon, sig1(:,3), 'g','LineWidth',2, 'DisplayName', 'Analytic mat3');
 plot(epsilon, sig1(:,4), 'm','LineWidth',2, 'DisplayName', 'Analytic mat4');
 plot(epsilon, sig1(:,5), 'k','LineWidth',2, 'DisplayName', 'Analytic mat5');
+
+plot(epsilon, sigg(:,1), 'c','LineWidth',2, 'DisplayName', 'Ritikas');
 
 legend('show');
 ylabel("Cauchy Stress (Pa)");

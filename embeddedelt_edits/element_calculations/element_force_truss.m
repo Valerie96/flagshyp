@@ -32,16 +32,16 @@ epsilon = log(lambda);
 J       = lambda^(1-2*nu);
 
 %Bulk Viscosity Damping
-Jn_1=GEOM.Jn_1(ielement);
-eps_dot = (J-Jn_1)/dt;
-b1=DAMPING.b1;
-b2=DAMPING.b2;
-
-    le=calc_element_size(FEM,GEOM,ielement);
-    Cd=sqrt((lambda + 2*mu)/rho);
-    
-    p1 = rho*b1*le*Cd*eps_dot*eye(3);
-    p2 = rho*(b2*le)^2*abs(eps_dot)*min(0,eps_dot)*eye(3);
+% Jn_1=GEOM.Jn_1(ielement);
+% eps_dot = (J-Jn_1)/dt;
+% b1=DAMPING.b1;
+% b2=DAMPING.b2;
+% 
+%     le=calc_element_size(FEM,GEOM,ielement);
+%     Cd=sqrt((lambda + 2*mu)/rho);
+%     
+%     p1 = rho*b1*le*Cd*eps_dot*eye(3);
+%     p2 = rho*(b2*le)^2*abs(eps_dot)*min(0,eps_dot)*eye(3);
     
 %Explicit NeoHooke
 b = [lambda^2 0 0; 0 lambda^(-2*nu) 0; 0 0 lambda^(-2*nu)];
@@ -62,7 +62,9 @@ T_internal = [-Tb;Tb];
 
     
     %Update previous Jacobian and element strain rate
-    geomJn_1=J;
-    VolRate = eps_dot;
+%     geomJn_1=J;
+%     VolRate = eps_dot;
+    geomJn_1=1;
+    VolRate = 1;
 
 end

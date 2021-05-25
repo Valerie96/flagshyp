@@ -100,7 +100,7 @@ for ii=1:FEM(k).mesh.nelem
                                        ielement);    
 
 end
-
+    GLOBAL.T_int = Step_globalT_int;
 
 end
     GLOBAL.T_int = Step_globalT_int;

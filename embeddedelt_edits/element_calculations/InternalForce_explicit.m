@@ -72,7 +72,7 @@ for igauss=1:QUADRATURE(1).element.ngauss
     %----------------------------------------------------------------------
     %|-/ 
     % Calculate bulk viscosity damping
-    le=calc_element_size(FEM(1),GEOM(1),ielement);
+    [le,~]=calc_element_size(FEM(1),GEOM(1),ielement);
     rho=properties(1); mu=properties(2); lambda=properties(3);
     Cd=sqrt((lambda + 2*mu)/rho);
     
