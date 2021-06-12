@@ -9,7 +9,7 @@ Global_nums = 1:GEOM.total_n_elets;
 max_elet_type = 0;
 for i=1:FEM(1).n_elet_type
     if FEM(i).mesh.nelem > max_elet_type
-        max_elet_type = FEM(i).mesh.nelem
+        max_elet_type = FEM(i).mesh.nelem;
     end
 end
 

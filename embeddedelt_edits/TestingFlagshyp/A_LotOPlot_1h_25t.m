@@ -139,7 +139,7 @@ legend('show');
 %% Abaqus vs Embedded Abaqus vs   Flagshyp 1 vs Flagshyp 2 vs Flagshyp 3 Energy
 
 [AbqEHost, AbqETruss, AbqE] = ReadHostTruss('OneHost25Truss');
-AbqOneHost = ReadHost("OneHostNH05");
+AbqOneHost = ReadHost3('Ab_1h_OG');
 graphsize=[100 100 800 400];
 name1a = "Abaqus Solid";
 name2a = "Abaqus Embedded";
@@ -154,7 +154,7 @@ file3="embed_1h_25t_correct";
 name3 = "Flagshyp Corrected";
 
 FLAG_1 = ReadFlagshypOutputFile(file1, 83,1); 
-FLAG_2 = ReadFlagshypOutputFile(file2, 94,1);
+FLAG_2 = ReadFlagshypOutputFile(file2, 82,1);
 FLAG_3 = ReadFlagshypOutputFile(file3, 82,1);
 
 PlotEnergy5([AbqOneHost.time, AbqOneHost.KE],[AbqEHost.time, AbqE.KE], [FLAG_1.Etime, FLAG_1.KE], [FLAG_2.Etime, FLAG_2.KE],[FLAG_3.Etime, FLAG_3.KE], name1a, name2a,name1, name2,name3,'Kinetic Energy')

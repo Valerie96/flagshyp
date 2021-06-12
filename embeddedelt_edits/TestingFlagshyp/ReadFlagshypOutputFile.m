@@ -5,12 +5,17 @@
 % steps = 83;
 % nplot = 1;
 
-function [FLAG] = ReadFlagshypOutputFile(name, steps, nplot)
+function [FLAG] = ReadFlagshypOutputFile(name,folder, steps, nplot)
 
-basedir=strcat('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/job_folder/',name);
+if strcmp(folder,"StrainRateTesting")
+    basedir=strcat('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/job_folder/StrainRateTesting/job_folder/',name);
+else
+    basedir=strcat('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/job_folder/',name);
+end 
+
 set(0,'defaultfigurecolor',[1 1 1]);
 file = strcat(basedir,'/', name, '-OUTPUT.txt');
-file =fopen(file, 'r');
+file = fopen(file, 'r');
 numsteps = floor(steps/nplot);
 graphsize=[100 100 800 400];
 
@@ -98,7 +103,7 @@ FLAG.TrussLE = Strain2;
 
 
 %Read Energy File
-basedir=strcat('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/job_folder/',name);
+% basedir=strcat('C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/job_folder/',name);
 set(0,'defaultfigurecolor',[1 1 1]);
 f = strcat(basedir,'/energy.dat');
 file=fopen(f,'r');

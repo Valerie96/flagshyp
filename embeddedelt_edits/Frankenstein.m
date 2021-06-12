@@ -2,31 +2,24 @@
 %out what all of the variables are. This may be a disaster
 clear; clc; close all; 
 basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
-% inputfile='explicit_3D_LrgStrain.dat';
-% inputfile='truss_only.dat';
-inputfile='explicit_embedded_truss.dat';
+% basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/job_folder/StrainRateTesting';
+% inputfile='explicit_embedded_truss.dat';
 % inputfile='embedded_truss_redundant_fixed.dat';
-% % inputfile='truss_small_strain.dat';
-inputfile='explicit_wShear.dat';
-inputfile='embedded_truss_wShear_corrected.dat';
-% inputfile='embedded_2truss_corrected.dat';
+% inputfile='explicit_wShear.dat';
+% inputfile='embedded_truss_wShear_corrected.dat';_correct
 % inputfile='embed_1h_25t.dat';
-% inputfile='embed_1h_25t_correct.dat';
-% inputfile='explicit_3D.dat';
+% inputfile='embed_1h_25t.dat';_corrected_25t
+% inputfile='explicit_force.dat';
+inputfile='Force_1h_25t_correct.dat';
 % inputfile='embed_1h_100t.dat';
-simtime =  0.01;
-outputfreq=1;
-DAMPING.b1 = 0.035; %Linear bulk viscosity damping
-% DAMPING.b1 = 0.18; %Linear bulk viscosity damping
-DAMPING.b2 = 0; %Quadratic bulk viscosity damping
+% inputfile = 'Flag_1h_Rate50.dat'
 
+DAMPING.b1 = 0.035; %Linear bulk viscosity damping
+DAMPING.b2 = 0; %Quadratic bulk viscosity damping
+prefactor = 0.5;%0.75;
+outputfreq=1;
 ansmlv='y'; 
-global explicit;
-explicit = 1;
-global EmbedElt;
-EmbedElt = 1;
-global VolumeCorrect;
-VolumeCorrect = 1;
+
 tic
 %% Input_data_and_initilaization.m
 
@@ -60,6 +53,18 @@ tic
         % Problem title.   
         %--------------------------------------------------------------------------
         PRO.title = strtrim(fgets(fid));
+        %--------------------------------------------------------------------------
+        %Options
+        %--------------------------------------------------------------------------
+        global explicit;
+            text = fgetl(fid);
+            explicit = sscanf(text, "Explicit Analysis	%u");
+            text = fgetl(fid);
+        global EmbedElt;
+            EmbedElt = sscanf(text, "Embedded Elements	%u"); 
+            text = fgetl(fid);
+        global VolumeCorrect;
+            VolumeCorrect = sscanf(text, "VolumeCorrection	%u");        
         %--------------------------------------------------------------------------
         % Element type.    
         %--------------------------------------------------------------------------
@@ -103,7 +108,7 @@ tic
         % Read nodal point loads, prescribed displacements, surface pressure loads
         % and gravity (details in textbook).
         %--------------------------------------------------------------------------
-        [LOAD,BC,FEM(1),GLOBAL] = inloads(GEOM,FEM(1),BC,fid);
+        [LOAD,BC,FEM(1),GLOBAL,simtime] = inloads(GEOM,FEM(1),BC,fid);
         %--------------------------------------------------------------------------
         % Read control parameters.
         %--------------------------------------------------------------------------
@@ -139,7 +144,7 @@ tic
     save_restart_file(PRO,FEM,GEOM,QUADRATURE,BC,MAT,LOAD,CON,CONSTANT,...
                       GLOBAL,PLAST,KINEMATICS,'internal')    
     %output_vtk(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE.element,CONSTANT,KINEMATICS); 
-    output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS);
+%     output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS);
 
 
 %% ExplicitDynamics_algorithm
@@ -151,7 +156,7 @@ tic
  d1=digits(64);
 %step 1 - iniitalization
 %       - this is done in the intialisation.m file, line 68
-CON.xlamb = 0;
+CON.xlamb = 1;
 CON.incrm = 0; 
 
 
@@ -173,14 +178,13 @@ disp_prev = zeros(FEM(1).mesh.n_dofs,1);
 Time = 0; 
 tMax = simtime; % in seconds
 GLOBAL.tMax = tMax;
-prefactor = 0.75;
+% prefactor = 0.1;%0.75;
 dt= prefactor * CalculateTimeStep(FEM(1),GEOM,MAT(1),DAMPING); % in seconds
 time_step_counter = 0;
 plot_counter = 0;
 nPlotSteps = 20 ;
 nSteps = round(tMax/dt);
 nsteps_plot = round(nSteps/nPlotSteps);
-
 
 
 % start explicit loop
@@ -212,7 +216,7 @@ while(Time<tMax)
     % store old displacements for energy computation
     disp_prev = disp_n;
     % update nodal displacements 
-    disp_n = disp_n + dt_nphalf *velocities_half;
+    disp_n(BC.freedof) = disp_n(BC.freedof) + dt_nphalf *velocities_half(BC.freedof);
     
 %----------------------------------------------------------------
 % Update stored coodinates.
@@ -222,13 +226,20 @@ while(Time<tMax)
   dx = GEOM.x - GEOM.x0;
 %----------------------------------------------------------------   
 
+  % save external force, to be used in energy computation
+  fe_prev = GLOBAL.external_load + GLOBAL.Reactions;
+  
 % step 6 - enforce displacement BCs 
-%   %--------------------------------------------------------------------
-%   % Update nodal forces (excluding pressure) and gravity. 
-%   %--------------------------------------------------------------------
-%   [GLOBAL.Residual,GLOBAL.external_load] = ...
-%    external_force_update(GLOBAL.nominal_external_load,...
-%    GLOBAL.Residual,GLOBAL.external_load,CON.dlamb);
+  %--------------------------------------------------------------------
+  % Update nodal forces (excluding pressure) and gravity. 
+  %--------------------------------------------------------------------
+   CON.dlamb  = t_np1/tMax;
+   [GLOBAL.Residual,GLOBAL.external_load] = external_force_update_explicit ...
+       (GLOBAL.nominal_external_load,...
+        GLOBAL.Residual,GLOBAL.external_load,CON.dlamb);
+
+    GLOBAL.external_load_effective = GLOBAL.external_load;
+    
 %   %--------------------------------------------------------------------
 %   % Update nodal forces and stiffness matrix due to external pressure 
 %   % boundary face (line) contributions. 
@@ -271,8 +282,7 @@ while(Time<tMax)
 % %----------------------------------------------------------------   
 
   % save internal force, to be used in energy computation
-  fi_prev = GLOBAL.T_int;  %fi_prev(BC.tiedof) = zeros(length(BC.tiedof),1);
-  fe_prev = GLOBAL.external_load + GLOBAL.Reactions;
+  fi_prev = GLOBAL.T_int; 
   
 %step 8 - getForce
   [GLOBAL,updated_PLAST,GEOM.Jn_1,GEOM.VolRate] = getForce_explicit(CON.xlamb,...
@@ -288,11 +298,10 @@ while(Time<tMax)
   AccOld = GLOBAL.accelerations;
   GLOBAL.accelerations = inv(GLOBAL.M)*(GLOBAL.external_load_effective - GLOBAL.T_int);
   
-%   GLOBAL.external_load_effective(BC.dofprescribed) = GLOBAL.M(BC.dofprescribed,BC.dofprescribed) * GLOBAL.accelerations(BC.dofprescribed);
   
 % step 10 second partial update of nodal velocities
   VelOld = GLOBAL.velocities;
-  GLOBAL.velocities = velocities_half + (t_np1 - t_nphalf) * GLOBAL.accelerations;
+  GLOBAL.velocities(BC.freedof) = velocities_half(BC.freedof) + (t_np1 - t_nphalf) * GLOBAL.accelerations(BC.freedof);
   
 %      |-/
 %      Update v/a of embedded nodes (if there are any)  
@@ -306,18 +315,20 @@ while(Time<tMax)
 %--------------------------------------------------------------
   EnergyIntForce = GLOBAL.T_int;
    EnergyIntForce(BC.tiedof) = zeros(length(BC.tiedof),1);
-   
-% step 11 check energy
+ %   GLOBAL.external_load_effective(BC.dofprescribed) = GLOBAL.M(BC.dofprescribed,BC.dofprescribed) * GLOBAL.accelerations(BC.dofprescribed);
+
+ % step 11 check energy
   [energy_value, max_energy] = check_energy_explicit(PRO,FEM,CON,BC, ...
       GLOBAL,disp_n, disp_prev,GLOBAL.T_int,fi_prev,...
-      GLOBAL.external_load + GLOBAL.Reactions,fe_prev,Time);
+      GLOBAL.external_load + GLOBAL.Reactions,fe_prev,Time);  
+
   
 %Plot every # steps
   if( mod(time_step_counter,outputfreq) == 0 )
       plot_counter = plot_counter +1;
       
       output(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS,Time,dt);
-      output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS);
+%       output_vtu(PRO,CON,GEOM,FEM,BC,GLOBAL,MAT,PLAST,QUADRATURE,CONSTANT,KINEMATICS);
 
 %       PLAST = save_output(updated_PLAST,PRO,FEM,GEOM,QUADRATURE,BC,...
 %                 MAT,LOAD,CON,CONSTANT,GLOBAL,PLAST,KINEMATICS);  

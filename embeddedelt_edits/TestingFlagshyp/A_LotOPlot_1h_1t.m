@@ -10,14 +10,17 @@ name2 = "Flagshyp Uncorrected";
 file3="embedded_truss_redundant_fixed";
 name3 = "Flagshyp Corrected";
 
-FLAG_1 = ReadFlagshypOutputFile(file1, 83,1); 
-FLAG_2 = ReadFlagshypOutputFile(file2, 82,1);
-FLAG_3 = ReadFlagshypOutputFile(file3, 83,1);
+FLAG_1 = ReadFlagshypOutputFile(file1,'jf', 83,1); 
+FLAG_2 = ReadFlagshypOutputFile(file2,'jf', 82,1);
+FLAG_3 = ReadFlagshypOutputFile(file3,'jf', 83,1);
 
 PlotEnergy3([FLAG_1.Etime, FLAG_1.KE], [FLAG_2.Etime, FLAG_2.KE],[FLAG_3.Etime, FLAG_3.KE], name1, name2,name3,'Kinetic Energy')
 PlotEnergy3([FLAG_1.Etime, FLAG_1.IE], [FLAG_2.Etime, FLAG_2.IE],[FLAG_3.Etime, FLAG_3.IE], name1, name2,name3,'Internal Energy')
-PlotEnergy3([FLAG_1.Etime, FLAG_1.WK], [FLAG_2.Etime, FLAG_2.WK],[FLAG_3.Etime, FLAG_3.WK], name1, name2,name3,'External Work')
+PlotEnergy3([FLAG_1.Etime, FLAG_1.IE], [FLAG_2.Etime, FLAG_2.WK],[FLAG_3.Etime, FLAG_3.WK], name1, name2,name3,'External Work')
 PlotEnergy3([FLAG_1.Etime, FLAG_1.ET], [FLAG_2.Etime, FLAG_2.ET],[FLAG_3.Etime, FLAG_3.ET], name1, name2,name3,'Total Energy')
+
+PlotEnergy3([FLAG_1.Etime, FLAG_1.IE+FLAG_1.WK], [FLAG_1.Etime, FLAG_1.WK],[FLAG_1.Etime, FLAG_1.IE], 'Total', 'External','Internal','Total Energy')
+PlotEnergy3([FLAG_1.Etime, FLAG_1.IE+FLAG_1.WK], [FLAG_1.Etime, FLAG_1.IE+FLAG_1.WK],[FLAG_1.Etime, FLAG_1.IE+FLAG_1.WK], 'Total', 'Total','Total','Total Energy')
 
 %% Flagshyp 1 vs Flagshyp 2 vs Flagshyp 3: Field Output
 
@@ -105,7 +108,7 @@ legend('show');
 %% Abaqus vs Embedded Abaqus vs   Flagshyp 1 vs Flagshyp 2 vs Flagshyp 3 Energy
 
 [AbqEHost, AbqETruss, AbqE] = ReadHostTruss('OneHostOneTruss05');
-AbqOneHost = ReadHost("OneHostNH05");
+AbqOneHost = ReadHost3('Ab_1h_OG');
 graphsize=[100 100 800 400];
 name1a = "Abaqus Solid";
 name2a = "Abaqus Embedded";
@@ -119,15 +122,22 @@ name2 = "Flagshyp Uncorrected";
 file3="embedded_truss_redundant_fixed";
 name3 = "Flagshyp Corrected";
 
-FLAG_1 = ReadFlagshypOutputFile(file1, 83,1); 
-FLAG_2 = ReadFlagshypOutputFile(file2, 82,1);
-FLAG_3 = ReadFlagshypOutputFile(file3, 83,1);
+FLAG_1 = ReadFlagshypOutputFile(file1,'jf', 83,1); 
+FLAG_2 = ReadFlagshypOutputFile(file2,'jf', 82,1);
+FLAG_3 = ReadFlagshypOutputFile(file3,'jf', 83,1);
 
 PlotEnergy5([AbqOneHost.time, AbqOneHost.KE],[AbqEHost.time, AbqE.KE], [FLAG_1.Etime, FLAG_1.KE], [FLAG_2.Etime, FLAG_2.KE],[FLAG_3.Etime, FLAG_3.KE], name1a, name2a,name1, name2,name3,'Kinetic Energy')
 PlotEnergy5([AbqOneHost.time, AbqOneHost.IE],[AbqEHost.time, AbqE.IE], [FLAG_1.Etime, FLAG_1.IE], [FLAG_2.Etime, FLAG_2.IE],[FLAG_3.Etime, FLAG_3.IE], name1a, name2a,name1, name2,name3,'Internal Energy')
 PlotEnergy5([AbqOneHost.time, -AbqOneHost.WK],[AbqEHost.time, -AbqE.WK],[FLAG_1.Etime, FLAG_1.WK], [FLAG_2.Etime, FLAG_2.WK],[FLAG_3.Etime, FLAG_3.WK],  name1a, name2a,name1, name2,name3,'External Work')
 PlotEnergy5([AbqOneHost.time, AbqOneHost.ETOTAL],[AbqEHost.time, AbqE.ETOTAL], [FLAG_1.Etime, FLAG_1.ET], [FLAG_2.Etime, FLAG_2.ET],[FLAG_3.Etime, FLAG_3.ET], name1a, name2a,name1, name2,name3,'Total Energy')
+PlotEnergy5([AbqOneHost.time, AbqOneHost.VD],[AbqEHost.time, AbqE.VD], [FLAG_1.Etime, FLAG_1.KE*0], [FLAG_2.Etime, FLAG_2.KE*0],[FLAG_3.Etime, FLAG_3.KE*0], name1a, name2a,name1, name2,name3,'Viscous Dissipation')
 
+
+%%
+PlotEnergy5([AbqOneHost.time, AbqOneHost.ETOTAL],[AbqOneHost.time, AbqOneHost.IE], [AbqOneHost.time, -AbqOneHost.WK], [AbqOneHost.time, AbqOneHost.KE],[AbqOneHost.time, AbqOneHost.KE+AbqOneHost.IE-AbqOneHost.WK], 'Total', 'Internal','External', 'Kinetic','Total',' Energy')
+PlotEnergy5([AbqOneHost.time, AbqOneHost.ETOTAL],[AbqOneHost.time, 0*AbqOneHost.IE], [AbqOneHost.time, -AbqOneHost.WK*0], [AbqOneHost.time, AbqOneHost.KE],[AbqOneHost.time, AbqOneHost.KE+AbqOneHost.IE-AbqOneHost.WK], 'Total', 'Internal','External', 'Kinetic','Total',' Energy')
+
+%%
 figure();
 hold on; grid on;
 % fig=gcf; fig.Position=graphsize;
@@ -171,7 +181,7 @@ legend('show');
 figure();
 hold on; grid on;
 % fig=gcf; fig.Position=graphsize;
-plot(AbqOneHost.time,AbqOneHost.Force,'bo','DisplayName',name1a);
+plot(AbqOneHost.time,AbqOneHost.Force(:,2),'bo','DisplayName',name1a);
 plot(AbqEHost.time,AbqEHost.Force,'ro' ,'DisplayName',name2a);
 plot(FLAG_1.time,FLAG_1.RF(:,2,1),'b','DisplayName',name1,'LineWidth',3);
 plot(FLAG_2.time,FLAG_2.RF(:,2,1),'r','DisplayName',name2,'LineWidth',3);

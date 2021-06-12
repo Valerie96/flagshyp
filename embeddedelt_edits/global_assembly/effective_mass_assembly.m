@@ -46,8 +46,7 @@ for ii=1:length(FEM(1).mesh.nelem)
     me = rho * Ve;
     
     %c: Loop over embedded elements
-    mf_tot = 0; mc =0;
-    
+    mf_tot = 0; mc =0; 
         for jj=1:GEOM.embedded.HostTotals(ielement,2)
            jelement = jj; 
            if GEOM.embedded.ElementHost(jelement,1) == ielement

@@ -30,18 +30,18 @@ name6 = "1h 25t Rate5";
 name7 = "1h 25t Rate10";
 name8 = "1h 25t Rate25";
 
-% PlotEnergy3([Abq1h_25t_R1.time, Abq1h_25t_R1.KE], [Abq1h_25t_R5.time, Abq1h_25t_R5.KE], [Abq1h_25t_R10.time, Abq1h_25t_R10.KE], name5, name6,name7,'Kinetic Energy')
+PlotEnergy3([Abq1h_25t_R10.time, Abq1h_25t_R10.KE], [Abq1h_25t_R100.time, Abq1h_25t_R100.KE], [Abq1h_25t_R200.time, Abq1h_25t_R200.KE], name5, name6,name7,'Kinetic Energy')
 % PlotEnergy3([Abq1h_25t_R1.time, Abq1h_25t_R1.IE], [Abq1h_25t_R5.time, Abq1h_25t_R5.IE], [Abq1h_25t_R10.time, Abq1h_25t_R10.IE], name5, name6,name7,'Internal Energy')
 % PlotEnergy3([Abq1h_25t_R1.time, Abq1h_25t_R1.WK], [Abq1h_25t_R5.time, Abq1h_25t_R5.WK], [Abq1h_25t_R10.time, Abq1h_25t_R10.WK], name5, name6,name7,'External Energy')
 % PlotEnergy3([Abq1h_25t_R1.time, Abq1h_25t_R1.ETOTAL], [Abq1h_25t_R5.time, Abq1h_25t_R5.ETOTAL], [Abq1h_25t_R10.time, Abq1h_25t_R10.ETOTAL], name5, name6,name7,'Total Energy')
 
-
-    AveKE_0t = mean(Abq1h_R1.KE);  AveKE1_25t = mean(Abq1h_25t_R1.KE);
-    AveKE5_0t = mean(Abq1h_R5.KE);  AveKE5_25t = mean(Abq1h_25t_R5.KE);
-    AveKE10_0t = mean(Abq1h_R10.KE);AveKE10_25t = mean(Abq1h_25t_R10.KE);
-    AveKE25_0t = mean(Abq1h_R25.KE); AveKE25_25t = mean(Abq1h_25t_R25.KE);
-    AveKE100_0t = mean(Abq1h_R100.KE);AveKE100_25t = mean(Abq1h_25t_R100.KE);
-    AveKE200_0t = mean(Abq1h_R200.KE);AveKE200_25t = mean(Abq1h_25t_R200.KE);
+%%
+    AveKE_0t = Abq1h_R1.KE(end);  AveKE1_25t = Abq1h_25t_R1.KE(end);
+    AveKE5_0t = Abq1h_R5.KE(end);  AveKE5_25t = Abq1h_25t_R5.KE(end);
+    AveKE10_0t = Abq1h_R10.KE(end);AveKE10_25t = Abq1h_25t_R10.KE(end);
+    AveKE25_0t = Abq1h_R25.KE(end); AveKE25_25t = Abq1h_25t_R25.KE(end);
+    AveKE100_0t = Abq1h_R100.KE(end);AveKE100_25t = Abq1h_25t_R100.KE(end);
+    AveKE200_0t = Abq1h_R200.KE(end);AveKE200_25t = Abq1h_25t_R200.KE(end);
     
     figure; hold on; grid on;
     plot(1, Abq1h_R1.IE(end),'b.','MarkerSize',25, 'DisplayName', '0 Fibers'); 
@@ -59,7 +59,7 @@ name8 = "1h 25t Rate25";
     plot(200, Abq1h_25t_R200.IE(end),'r.','MarkerSize',25, 'DisplayName', '25 Fibers'); 
     xlabel("Strain Rate (1/s)");
     ylabel("Energy (J)");
-    title("Total Internal vs Applied Strain Rate");
+    title("Internal Energy vs Applied Strain Rate");
     legend('show');
     
     figure; hold on; grid on;
@@ -78,16 +78,17 @@ name8 = "1h 25t Rate25";
     plot(200, AveKE200_25t,'r.','MarkerSize',25, 'DisplayName', '25 Fibers'); 
     xlabel("Strain Rate (1/s)");
     ylabel("Energy (J)");
-    title("Total Kinetic vs Applied Strain Rate");
+    title("Kinetic Energy vs Applied Strain Rate");
     legend('show');
 
+    %% Kinetic Energy Rate
     %Energy Difference (Error)
-    AveTotEnergy_0t = mean(Abq1h_R1.ETOTAL);  AveTotEnergy1_25t = mean(Abq1h_25t_R1.ETOTAL);
-    AveTotEnergy5_0t = mean(Abq1h_R5.ETOTAL);  AveTotEnergy5_25t = mean(Abq1h_25t_R5.ETOTAL);
-    AveTotEnergy10_0t = mean(Abq1h_R10.ETOTAL);AveTotEnergy10_25t = mean(Abq1h_25t_R10.ETOTAL);
-    AveTotEnergy25_0t = mean(Abq1h_R25.ETOTAL); AveTotEnergy25_25t = mean(Abq1h_25t_R25.ETOTAL);
-    AveTotEnergy100_0t = mean(Abq1h_R100.ETOTAL);AveTotEnergy100_25t = mean(Abq1h_25t_R100.ETOTAL);
-    AveTotEnergy200_0t = mean(Abq1h_R200.ETOTAL);AveTotEnergy200_25t = mean(Abq1h_25t_R200.ETOTAL);
+    AveTotEnergy_0t = Abq1h_R1.KE(end);  AveTotEnergy1_25t = Abq1h_25t_R1.KE(end);
+    AveTotEnergy5_0t = Abq1h_R5.KE(end);  AveTotEnergy5_25t = Abq1h_25t_R5.KE(end);
+    AveTotEnergy10_0t = Abq1h_R10.KE(end);AveTotEnergy10_25t = Abq1h_25t_R10.KE(end);
+    AveTotEnergy25_0t = Abq1h_R25.KE(end); AveTotEnergy25_25t = Abq1h_25t_R25.KE(end);
+    AveTotEnergy100_0t = Abq1h_R100.KE(end);AveTotEnergy100_25t = Abq1h_25t_R100.KE(end);
+    AveTotEnergy200_0t = Abq1h_R200.KE(end);AveTotEnergy200_25t = Abq1h_25t_R200.KE(end);
     
     AveErr1 = abs(AveTotEnergy1_25t-AveTotEnergy_0t)/abs(AveTotEnergy_0t);
     AveErr5 = abs(AveTotEnergy5_25t-AveTotEnergy5_0t)/abs(AveTotEnergy5_0t);
@@ -105,7 +106,7 @@ name8 = "1h 25t Rate25";
     plot(200, AveErr200*100,'.','MarkerSize',25, 'DisplayName', '200 1/s');     
     xlabel("Strain Rate (1/s)");
     ylabel("Difference (Error) in Energy (%)");
-    title("Average Difference in Total Energy vs Applied Strain Rate");
+    title("Difference in Kinetic Energy vs Applied Strain Rate");
     legend('show');
 
     figure; hold on; grid on;
@@ -124,9 +125,57 @@ name8 = "1h 25t Rate25";
     plot(200, AveTotEnergy200_25t,'r.','MarkerSize',25, 'DisplayName', '25 Fibers'); 
     xlabel("Strain Rate (1/s)");
     ylabel("Energy (J)");
-    title("Total Energy vs Applied Strain Rate");
+    title("Kinetic Energy vs Applied Strain Rate");
     legend('show');
-%%
+    
+    
+%% Internal Energy Rate
+    %Energy Difference (Error)
+    AveTotEnergy_0t = Abq1h_R1.IE(end);  AveTotEnergy1_25t = Abq1h_25t_R1.IE(end);
+    AveTotEnergy5_0t = Abq1h_R5.IE(end);  AveTotEnergy5_25t = Abq1h_25t_R5.IE(end);
+    AveTotEnergy10_0t = Abq1h_R10.IE(end);AveTotEnergy10_25t = Abq1h_25t_R10.IE(end);
+    AveTotEnergy25_0t = Abq1h_R25.IE(end); AveTotEnergy25_25t = Abq1h_25t_R25.IE(end);
+    AveTotEnergy100_0t = Abq1h_R100.IE(end);AveTotEnergy100_25t = Abq1h_25t_R100.IE(end);
+    AveTotEnergy200_0t = Abq1h_R200.IE(end);AveTotEnergy200_25t = Abq1h_25t_R200.IE(end);
+    
+    AveErr1 = abs(AveTotEnergy1_25t-AveTotEnergy_0t)/abs(AveTotEnergy_0t);
+    AveErr5 = abs(AveTotEnergy5_25t-AveTotEnergy5_0t)/abs(AveTotEnergy5_0t);
+    AveErr10 = abs(AveTotEnergy10_25t-AveTotEnergy10_0t)/abs(AveTotEnergy10_0t);
+    AveErr25 = abs(AveTotEnergy25_25t-AveTotEnergy25_0t)/abs(AveTotEnergy25_0t);
+    AveErr100 = abs(AveTotEnergy100_25t-AveTotEnergy100_0t)/abs(AveTotEnergy100_0t);
+    AveErr200 = abs(AveTotEnergy200_25t-AveTotEnergy200_0t)/abs(AveTotEnergy200_0t);
+
+    figure; hold on; grid on;
+    plot(1, AveErr1*100,'.','MarkerSize',25, 'DisplayName', '1 1/s'); 
+    plot(5, AveErr5*100,'.','MarkerSize',25, 'DisplayName', '5 1/s'); 
+    plot(10, AveErr10*100,'.','MarkerSize',25, 'DisplayName', '10 1/s'); 
+    plot(25, AveErr25*100,'.','MarkerSize',25, 'DisplayName', '25 1/s'); 
+    plot(100, AveErr100*100,'.','MarkerSize',25, 'DisplayName', '100 1/s'); 
+    plot(200, AveErr200*100,'.','MarkerSize',25, 'DisplayName', '200 1/s');     
+    xlabel("Strain Rate (1/s)");
+    ylabel("Difference (Error) in Energy (%)");
+    title("Difference in Internal Energy vs Applied Strain Rate");
+    legend('show');
+
+    figure; hold on; grid on;
+    plot(1, AveTotEnergy_0t,'b.','MarkerSize',25, 'DisplayName', '0 Fibers'); 
+    plot(5, AveTotEnergy5_0t,'b.','MarkerSize',25, 'DisplayName', '0 Fibers'); 
+    plot(10, AveTotEnergy10_0t,'b.','MarkerSize',25, 'DisplayName', '0 Fibers'); 
+    plot(25, AveTotEnergy25_0t,'b.','MarkerSize',25, 'DisplayName', '0 Fibers'); 
+    plot(100, AveTotEnergy100_0t,'b.','MarkerSize',25, 'DisplayName', '0 Fibers'); 
+    plot(200, AveTotEnergy200_0t,'b.','MarkerSize',25, 'DisplayName', '0 Fibers'); 
+    
+    plot(1, AveTotEnergy1_25t,'r.','MarkerSize',25, 'DisplayName', '25 Fibers'); 
+    plot(5, AveTotEnergy5_25t,'r.','MarkerSize',25, 'DisplayName', '25 Fibers'); 
+    plot(10, AveTotEnergy10_25t,'r.','MarkerSize',25, 'DisplayName', '25 Fibers'); 
+    plot(25, AveTotEnergy25_25t,'r.','MarkerSize',25, 'DisplayName', '25 Fibers');
+    plot(100, AveTotEnergy100_25t,'r.','MarkerSize',25, 'DisplayName', '25 Fibers'); 
+    plot(200, AveTotEnergy200_25t,'r.','MarkerSize',25, 'DisplayName', '25 Fibers'); 
+    xlabel("Strain Rate (1/s)");
+    ylabel("Energy (J)");
+    title("Internal Energy vs Applied Strain Rate");
+    legend('show');
+%% Vol Fraction
 Abq1h_OG = ReadHost2("Ab_1h_Rate5");
 [AbHost_1h_2t, AbTruss_1h_2t, AbqE_1h_2t] = ReadHostTruss2('Ab_1h_2t');
 [AbHost_1h_25t, AbTruss_1h_25t, AbqE_1h_25t] = ReadHostTruss2('Ab_1h_25t');
@@ -145,12 +194,12 @@ PlotEnergy3([Abq1h_OG.time, Abq1h_OG.ETOTAL], [AbqE_1h_2t.time, AbqE_1h_2t.ETOTA
 % PlotEnergy3([Abq1h_OG.time, Abq1h_OG.VD], [AbqE_1h_2t.time, AbqE_1h_2t.VD], [AbqE_1h_25t.time, AbqE_1h_25t.VD], name1, name2,name3,'Viscus Dispation Energy')
 
 
-
+%% Kinetic Energy
     %Energy Difference (Error)    
-    AveTotEnergy_0t = mean(Abq1h_OG.ETOTAL);
-    AveTotEnergy_2t = mean(AbqE_1h_2t.ETOTAL);
-    AveTotEnergy_25t = mean(AbqE_1h_25t.ETOTAL);
-    AveTotEnergy_10t = mean(AbqE_1h_10t.ETOTAL);
+    AveTotEnergy_0t = Abq1h_OG.KE(end);
+    AveTotEnergy_2t = AbqE_1h_2t.KE(end);
+    AveTotEnergy_25t = AbqE_1h_25t.KE(end);
+    AveTotEnergy_10t = AbqE_1h_10t.KE(end);
     
     AveErr1 = abs(AveTotEnergy_0t-AveTotEnergy_0t)/abs(AveTotEnergy_0t);
     AveErr2 = abs(AveTotEnergy_2t-AveTotEnergy_0t)/abs(AveTotEnergy_0t);
@@ -169,7 +218,7 @@ PlotEnergy3([Abq1h_OG.time, Abq1h_OG.ETOTAL], [AbqE_1h_2t.time, AbqE_1h_2t.ETOTA
     plot(VolFrac25, 100*AveErr25,'.','MarkerSize',25, 'DisplayName', '25 Fibers'); 
     xlabel("Volume Fraction");
     ylabel("Difference (Error) in Energy (%)");
-    title("Average Difference in Total Energy vs Fiber Volume Fraction");
+    title("Average Difference in Kinetic Energy vs Fiber Volume Fraction");
     legend('show');
     
     figure; hold on; grid on;
@@ -179,9 +228,46 @@ PlotEnergy3([Abq1h_OG.time, Abq1h_OG.ETOTAL], [AbqE_1h_2t.time, AbqE_1h_2t.ETOTA
     plot(VolFrac25, AveTotEnergy_25t,'.','MarkerSize',25, 'DisplayName', '25 Fibers'); 
     xlabel("Volume Fraction");
     ylabel("Energy (J)");
-    title("Average Total Energy vs Fiber Volume Fraction");
+    title("Average Kinetic Energy vs Fiber Volume Fraction");
     legend('show');
 
+    
+%% Internal Energy
+    %Energy Difference (Error)    
+    AveTotEnergy_0t = Abq1h_OG.IE(end);
+    AveTotEnergy_2t = AbqE_1h_2t.IE(end);
+    AveTotEnergy_25t = AbqE_1h_25t.IE(end);
+    AveTotEnergy_10t = AbqE_1h_10t.IE(end);
+    
+    AveErr1 = abs(AveTotEnergy_0t-AveTotEnergy_0t)/abs(AveTotEnergy_0t);
+    AveErr2 = abs(AveTotEnergy_2t-AveTotEnergy_0t)/abs(AveTotEnergy_0t);
+    AveErr25 = abs(AveTotEnergy_25t-AveTotEnergy_0t)/abs(AveTotEnergy_0t);
+    AveErr10 = abs(AveTotEnergy_10t-AveTotEnergy_0t)/abs(AveTotEnergy_0t);
+
+    VolFrac0 = 0;
+    VolFrac2 = 2*(0.02*1)/1;
+    VolFrac25 = 25*(0.02*1)/1;
+    VolFrac10 = 10*(0.02*1)/1;
+    
+    figure; hold on; grid on;
+    plot(VolFrac0, 100*AveErr1,'.','MarkerSize',25, 'DisplayName', '0 Fibers'); 
+    plot(VolFrac2, 100*AveErr2,'.','MarkerSize',25, 'DisplayName', '2 Fibers');
+    plot(VolFrac10, 100*AveErr10,'.','MarkerSize',25, 'DisplayName', '10 Fibers');    
+    plot(VolFrac25, 100*AveErr25,'.','MarkerSize',25, 'DisplayName', '25 Fibers'); 
+    xlabel("Volume Fraction");
+    ylabel("Difference (Error) in Energy (%)");
+    title("Average Difference in Internal Energy vs Fiber Volume Fraction");
+    legend('show');
+    
+    figure; hold on; grid on;
+    plot(VolFrac0, AveTotEnergy_0t,'.','MarkerSize',25, 'DisplayName', '0 Fibers'); 
+    plot(VolFrac2, AveTotEnergy_2t,'.','MarkerSize',25, 'DisplayName', '2 Fibers'); 
+    plot(VolFrac10, AveTotEnergy_10t,'.','MarkerSize',25, 'DisplayName', '10 Fibers');    
+    plot(VolFrac25, AveTotEnergy_25t,'.','MarkerSize',25, 'DisplayName', '25 Fibers'); 
+    xlabel("Volume Fraction");
+    ylabel("Energy (J)");
+    title("Average Internal Energy vs Fiber Volume Fraction");
+    legend('show');
 %%
 Abq1h_OG = ReadHost2("Ab_1h_Force");
 [AbHost_1h_2t, AbTruss_1h_2t, AbqE_1h_2t] = ReadHostTruss2('Ab_1h_2t_Force');

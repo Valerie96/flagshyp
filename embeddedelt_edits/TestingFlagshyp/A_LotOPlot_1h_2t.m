@@ -124,13 +124,17 @@ legend('show');
 
 %% Abaqus vs Embedded Abaqus vs   Flagshyp 1 vs Flagshyp 2 vs Flagshyp 3 Energy
 
+% AbqOneHost = ReadHost2("Ab_1h_Rate5");
+% [AbqEHost, AbqETruss, AbqE] = ReadHostTruss2('Ab_1h_2t');
+
 [AbqEHost, AbqETruss, AbqE] = ReadHostTruss('OneHostTwoTrussResults');
-AbqOneHost = ReadHost("OneHostNHResults");
+AbqOneHost = ReadHost3('Ab_1h_OG');
+
 graphsize=[100 100 800 400];
 name1a = "Abaqus Solid";
 name2a = "Abaqus Embedded";
 
-file1="explicit_3D";
+file1="explicit_3D_04";
 name1 = "Flagshyp No Truss";
 
 file2="embedded_2truss";
@@ -174,6 +178,20 @@ title("Host XX Stress");
 xlabel("Time (s)");
 ylabel("Stress (Pa)");
 legend('show');
+
+figure();
+hold on; grid on;
+% fig=gcf; fig.Position=graphsize;
+plot(AbqOneHost.time,AbqOneHost.Displacement(:,2),'bo','DisplayName',name1a);
+plot(AbqEHost.time,AbqEHost.Displacement(:,2),'ro' ,'DisplayName',name2a);
+plot(FLAG_1.time,FLAG_1.Disp(:,2,1),'b','DisplayName',name1,'LineWidth',3);
+plot(FLAG_2.time,FLAG_2.Disp(:,2,1),'r','DisplayName',name2,'LineWidth',3);
+plot(FLAG_3.time,FLAG_3.Disp(:,2,1),'g','DisplayName',name3,'LineWidth',2);
+title("X Displacement");
+xlabel("Time (s)");
+ylabel("Displacement (m) ");
+legend('show');
+
 %% Function Defs
 
 function PlotEnergy(Data1, Data2, Name1, Name2,Title)

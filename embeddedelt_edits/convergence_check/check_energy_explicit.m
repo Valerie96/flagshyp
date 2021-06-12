@@ -38,12 +38,6 @@ for i=1:FEM(1).mesh.n_dofs
 end
 WKE = WKE * 0.5;
 
-% for i=1:3:FEM(1).mesh.n_dofs
-%     v2 = (GLOBAL.velocities(i)^2 + GLOBAL.velocities(i+1)^2 + GLOBAL.velocities(i+2)^2);
-%     WKE = WKE + GLOBAL.M(i,i) *v2;
-% end
-% WKE = WKE * 0.5;
-
 energy_value = abs(WKE + Wint_n - Wext_n);
 numbers = [WKE, Wint_n, Wext_n];
 max_energy = max(numbers);

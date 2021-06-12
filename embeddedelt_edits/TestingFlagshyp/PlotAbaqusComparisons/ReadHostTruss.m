@@ -23,6 +23,7 @@ fclose(file);
 AbqEHost.time = A(:,1);
 AbqEHost.Acceleration = A(:,2);
 AbqETruss.Acceleration = A(:,3);
+
 AbqEHost.Strain = A(:,[10 12]);
 AbqETruss.Strain = A(:,11);
 AbqEHost.Force = A(:,13);

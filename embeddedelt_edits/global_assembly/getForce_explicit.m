@@ -16,7 +16,7 @@ updated_PLAST = PLAST(k);
 %--------------------------------------------------------------------------
 % Initialises the total external load vector except pressure contributions.
 %--------------------------------------------------------------------------
-GLOBAL.external_load = xlamb*GLOBAL.nominal_external_load;
+% GLOBAL.external_load = xlamb*GLOBAL.nominal_external_load;
 
 Jn_1_vec=ones(FEM(1).mesh.nelem,1);
 VolRate_vec=zeros(FEM(1).mesh.nelem,QUADRATURE(1).element.ngauss);
@@ -106,33 +106,17 @@ end
     GLOBAL.T_int = Step_globalT_int;
 % |-/
 
-
-GLOBAL.external_load_effective(BC.fixdof) = GLOBAL.T_int(BC.fixdof);
-
-%
-% t_np1 = t_total; tn = t_np1 - dt;
-% AppliedDisp = presc_displacement(BC.dofprescribed);
-% % ramp = t_n * (AppliedDisp / GLOBAL.tMax);
-% AppliedVel = (AppliedDisp / GLOBAL.tMax);
-% AppliedAcc = AppliedVel * 0; %Only constant velocities right now
-% 
-% M  = GLOBAL.M(BC.dofprescribed,BC.dofprescribed);
-% 
-% GLOBAL.external_load_effective(BC.dofprescribed) = 
-
+  if  BC.n_prescribed_displacements > 0
+    GLOBAL.external_load_effective(BC.fixdof) = GLOBAL.T_int(BC.fixdof);
+    
+  end
 
 
 % algorithm in box 6.1 gives f_n = f_ext - f_int
 GLOBAL.Residual              = GLOBAL.external_load - GLOBAL.T_int;
 GLOBAL.Reactions(BC.fixdof)  = GLOBAL.T_int(BC.fixdof);
 
-% GLOBAL.Reactions(BC.tiedof)  = GLOBAL.T_int(BC.tiedof); %"Reaction forces
-% on embedded nodes are from host element, which technically makes them
-% internal forces
 
-%Internal forces on embedded nodes have been accounted for in the host
-%elements so keeping these forces is redundant
-% GLOBAL.T_int(BC.tiedof) = zeros(length(BC.tiedof),1);
 
     
 end
