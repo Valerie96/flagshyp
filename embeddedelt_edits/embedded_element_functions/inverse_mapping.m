@@ -3,18 +3,14 @@ function GEOM = inverse_mapping(GEOM,FEM,tienodes)
 % NodeHost: list of nodes and their associated host, and ElementHost: list
 % of elements and their associated host. 
 
-% clear;clc;
-% load('InverseMappingTest.mat');
-% tienodes = BC.tienodes;
-%     e_elts = FEM.mesh.embedded;
-%     h_elts = FEM.mesh.host;
-    e_nodes = tienodes(:);
+
 %-----------------------------------------------------------------------
 %!!!!!!!!!!!
 %For now, assume all elements of the first type are hosts and all of the
 %second type are embedded
 %!!!!!!!!!!!
 %-----------------------------------------------------------------------
+    e_nodes = tienodes(:);
     h_elts=FEM(1).mesh.host; 
     e_elts=FEM(2).mesh.embedded;
     Global_nums = 1:GEOM.total_n_elets;

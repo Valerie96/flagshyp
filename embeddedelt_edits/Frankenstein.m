@@ -54,7 +54,7 @@ tic
         %--------------------------------------------------------------------------
         PRO.title = strtrim(fgets(fid));
         %--------------------------------------------------------------------------
-        %Options
+        %Options: Explicit anaysis, Embedded Elements, Volume Correction 
         %--------------------------------------------------------------------------
         global explicit;
             text = fgetl(fid);
@@ -134,9 +134,7 @@ tic
      initialisation(FEM,GEOM,QUADRATURE,MAT,LOAD,CONSTANT,CON,GLOBAL,BC);   
     
     %----------------------------------------------------------------------
-    % |-/
     GLOBAL.external_load_effective = GLOBAL.external_load;
-    %|-/
     %----------------------------------------------------------------------
     % Save into restart file.
     %----------------------------------------------------------------------
@@ -178,7 +176,7 @@ disp_prev = zeros(FEM(1).mesh.n_dofs,1);
 Time = 0; 
 tMax = simtime; % in seconds
 GLOBAL.tMax = tMax;
-% prefactor = 0.1;%0.75;
+% prefactor = 0.75;
 dt= prefactor * CalculateTimeStep(FEM(1),GEOM,MAT(1),DAMPING); % in seconds
 time_step_counter = 0;
 plot_counter = 0;
@@ -189,9 +187,6 @@ nsteps_plot = round(nSteps/nPlotSteps);
 
 % start explicit loop
 while(Time<tMax)
-%     if time_step_counter <=5
-%         dt=8E-6;
-%     end
     t_n       = Time;
     t_np1     = Time + dt;
     Time      = t_np1; % update the time by adding full time step
@@ -249,18 +244,16 @@ while(Time<tMax)
 %               GLOBAL,LOAD,QUADRATURE.boundary,CON.dlamb);    
 %   end
   %--------------------------------------------------------------------
-  % For the case of prescribed geometry update coodinates.
-  % -Recompute equivalent nodal forces and assembles residual force, 
-  % excluding pressure contributions.
-  % -Recompute and assembles tangent stiffness matrix components, 
-  % excluding pressure contributions.
+  % Update applied displacements (incrementation based on a smooth ramp 
+  % over the total sim time 
   %--------------------------------------------------------------------
   if  BC.n_prescribed_displacements > 0
       [GEOM.x ,velocities_half]  = update_prescribed_displacements_explicit(BC.dofprescribed,...
                GEOM.x0,GEOM.x,velocities_half,BC.presc_displacement,t_np1,tMax); 
        disp_n(BC.fixdof) = GEOM.x(BC.fixdof) - GEOM.x0(BC.fixdof);  
-%      |-/
-%      Update coodinates of embedded nodes (if there are any)  
+    %--------------------------------------------------------------------       
+    % Update coodinates of embedded nodes (if there are any)  
+    %--------------------------------------------------------------------
           if EmbedElt == 1
               [GEOM.x,velocities_half, GLOBAL.accelerations ] = update_embedded_displacements_explicit(BC.tiedof, BC.tienodes,...
                     FEM,GEOM, velocities_half, GLOBAL.accelerations); 
@@ -268,6 +261,8 @@ while(Time<tMax)
           end
 
          dx = GEOM.x - GEOM.x0;
+         
+         
 %       [GLOBAL,updated_PLAST] = residual_and_stiffness_assembly(CON.xlamb,...
 %        GEOM,MAT,FEM,GLOBAL,CONSTANT,QUADRATURE.element,PLAST,KINEMATICS);
       %----------------------------------------------------------------
@@ -279,7 +274,7 @@ while(Time<tMax)
 %       end
   end
   
-% %----------------------------------------------------------------   
+%----------------------------------------------------------------   
 
   % save internal force, to be used in energy computation
   fi_prev = GLOBAL.T_int; 
@@ -291,9 +286,7 @@ while(Time<tMax)
   % updated stable time increment based on current deformation     
   dt_old=dt;
   dt = prefactor * CalculateTimeStep(FEM(1),GEOM,MAT(1),DAMPING);
-%   if time_step_counter <=5
-%         dt=8E-6;
-%     end
+
 %step 9 - compute accelerations.       
   AccOld = GLOBAL.accelerations;
   GLOBAL.accelerations = inv(GLOBAL.M)*(GLOBAL.external_load_effective - GLOBAL.T_int);

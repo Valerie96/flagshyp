@@ -1,6 +1,5 @@
 %--------------------------------------------------------------------------
-% Computes the element vector of global internal forces and the tangent
-% stiffness matrix (3D truss).
+% Computes the element vector of global internal forces 
 %--------------------------------------------------------------------------
 function [T_internal,counter,PLAST,geomJn_1,VolRate,Cauchy,epsilon,CauchyTensor] = element_force_truss(...
           properties,x_local,X_local,FEM,PLAST,counter,GEOM,DAMPING,dt)  
@@ -49,21 +48,28 @@ s = (1/3)*(3*lam+2*mu)*(J-1)*eye(3) + mu*(J^(-5/3))*(b - (1/3)*trace(b))*eye(3);
 CauchyTensor = s;
 Cauchy = CauchyTensor(1,1);
 
+%--------------------------------------------------------------------------
+%Abaqus considers trusses incompressible and therefore does not calculate
+%any change in cross sectional area that ought to happen for large strain
+%problems. This is the code to calculate that change, which will not be
+%used while we are trying to mimic Abaqus
 
 % epsilon = (l-L)/L;
 % Cauchy = E*epsilon;
  %area might need to get smaller
 %  a = area*L*J/l;
+
+%Update previous Jacobian and element strain rate
+%     geomJn_1=J;
+%     VolRate = eps_dot;
+%--------------------------------------------------------------------------
  a=area*L/l;
-%  a=area;
 T          = Cauchy*a;                  
 Tb         = T*n;                         
 T_internal = [-Tb;Tb];    
 
     
-    %Update previous Jacobian and element strain rate
-%     geomJn_1=J;
-%     VolRate = eps_dot;
+%Update previous Jacobian and element strain rate
     geomJn_1=1;
     VolRate = 1;
 

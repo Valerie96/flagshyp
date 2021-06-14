@@ -22,7 +22,7 @@ T_internal = zeros(FEM(1).mesh.n_dofs_elem,1);
 KINEMATICS(1) = gradients(xlocal,x0local,FEM(1).interpolation.element.DN_chi,...
              QUADRATURE(1).element,KINEMATICS(1));
 
-%|-/
+
 Jn_1=GEOM.Jn_1(ielement);
 J=KINEMATICS(1).J(1);
 eps_dot = (J-Jn_1)/dt;
@@ -69,8 +69,8 @@ for igauss=1:QUADRATURE(1).element.ngauss
     % Add pressure contribution to stresses and elasticity tensor.
     %----------------------------------------------------------------------    
     [Cauchy,c] = mean_dilatation_pressure_addition(Cauchy,c,CONSTANT,pressure,matyp);    
+    
     %----------------------------------------------------------------------
-    %|-/ 
     % Calculate bulk viscosity damping
     [le,~]=calc_element_size(FEM(1),GEOM(1),ielement);
     rho=properties(1); mu=properties(2); lambda=properties(3);
@@ -78,8 +78,6 @@ for igauss=1:QUADRATURE(1).element.ngauss
     
     p1 = rho*b1*le*Cd*eps_dot*CONSTANT.I;
     p2 = rho*(b2*le)^2*abs(eps_dot)*min(0,eps_dot)*CONSTANT.I;
-    %
-    %|-/
         
     %----------------------------------------------------------------------
     % Compute numerical integration multipliers.
@@ -89,20 +87,17 @@ for igauss=1:QUADRATURE(1).element.ngauss
     %----------------------------------------------------------------------
     % Compute equivalent (internal) force vector.
     %----------------------------------------------------------------------
-%     T = Cauchy*kinematics_gauss.DN_x;
     T = (Cauchy+p1+p2)*kinematics_gauss.DN_x;
     T_internal = T_internal + T(:)*JW;
     
         
 end
 
-% |-/
     %Update previous Jacobian and element strain rate
     %Assuming that J and eps_dot are the same for all the element Gauss Pts
     %and I have now confirmed this
     geomJn_1=J;
     VolRate = eps_dot;
-% |-/
 
 
     
@@ -128,34 +123,10 @@ if GEOM.embedded.HostTotals(ielement,2) > 0
         if GEOM.embedded.ElementHost(eelt) == ielement
 %             fprintf("Host: %u    Guest: %u\n", ielement, eelt);
 
-% testfid = fopen('Force.txt','a');
-% formt = [repmat('% -1.4E ',1,3)];
-%     fprintf(testfid,'\n');
-%     for i=1:3:24
-%         fprintf(testfid,formt, T_internal(i:3));
-%     end            
-    
-              T_internal = DistributeCorrectInternalForce_explicit3(ielement,...
-                           T_internal,FEM, xlocal,x0local,...
-                           QUADRATURE,CONSTANT,GEOM,GlobT_int,...
+              T_internal = TrussCorrectedInternalForce_explicit(ielement,...
+                           T_internal,FEM,QUADRATURE,GEOM,GlobT_int,...
                            PLAST,KINEMATICS,MAT,DAMPING,eelt);
-
-
-% 
-% 
-%               T_internal = CorrectInternalForce_explicit(ielement,...
-%                         T_internal,FEM,xlocal,x0local,QUADRATURE,CONSTANT,GEOM,...
-%                             PLAST,KINEMATICS,MAT,DAMPING,eelt);
-% 
-%     fprintf(testfid,'\n');
-%     for i=1:3:24
-%         fprintf(testfid,formt, T_internal(i:3));
-%     end  
-%     fprintf(testfid,'\n');
-%     fclose(testfid);
-                        
-                        
-                        
+                
               search = search + 1;
               if search >= GEOM.embedded.HostTotals(ielement,2)
                   break;

@@ -9,13 +9,14 @@ basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
 % inputfile='embedded_truss_wShear_corrected.dat';_correct
 % inputfile='embed_1h_25t.dat';
 % inputfile='embed_1h_25t.dat';_corrected_25t
-inputfile='explicit_force.dat';
+% inputfile='explicit_force.dat';
+inputfile='Force_1h_25t_correct.dat';
 % inputfile='embed_1h_100t.dat';
 % inputfile = 'Flag_1h_Rate50.dat'
 
 DAMPING.b1 = 0.035; %Linear bulk viscosity damping
 DAMPING.b2 = 0; %Quadratic bulk viscosity damping
-prefactor = 0.75;%0.75;
+prefactor = 0.5;%0.75;
 outputfreq=1;
 ansmlv='y'; 
 
@@ -53,7 +54,7 @@ tic
         %--------------------------------------------------------------------------
         PRO.title = strtrim(fgets(fid));
         %--------------------------------------------------------------------------
-        %Options
+        %Options: Explicit anaysis, Embedded Elements, Volume Correction 
         %--------------------------------------------------------------------------
         global explicit;
             text = fgetl(fid);
@@ -215,7 +216,7 @@ while(Time<tMax)
     % store old displacements for energy computation
     disp_prev = disp_n;
     % update nodal displacements 
-    disp_n = disp_n + dt_nphalf *velocities_half;
+    disp_n(BC.freedof) = disp_n(BC.freedof) + dt_nphalf *velocities_half(BC.freedof);
     
 %----------------------------------------------------------------
 % Update stored coodinates.
@@ -248,17 +249,14 @@ while(Time<tMax)
 %               GLOBAL,LOAD,QUADRATURE.boundary,CON.dlamb);    
 %   end
   %--------------------------------------------------------------------
-  % For the case of prescribed geometry update coodinates.
-  % -Recompute equivalent nodal forces and assembles residual force, 
-  % excluding pressure contributions.
-  % -Recompute and assembles tangent stiffness matrix components, 
-  % excluding pressure contributions.
+  % Update applied displacements (incrementation based on a smooth ramp 
+  % over the total sim time 
   %--------------------------------------------------------------------
   if  BC.n_prescribed_displacements > 0
       [GEOM.x ,velocities_half]  = update_prescribed_displacements_explicit(BC.dofprescribed,...
                GEOM.x0,GEOM.x,velocities_half,BC.presc_displacement,t_np1,tMax); 
        disp_n(BC.fixdof) = GEOM.x(BC.fixdof) - GEOM.x0(BC.fixdof);  
-%      |-/
+
 %      Update coodinates of embedded nodes (if there are any)  
           if EmbedElt == 1
               [GEOM.x,velocities_half, GLOBAL.accelerations ] = update_embedded_displacements_explicit(BC.tiedof, BC.tienodes,...
@@ -300,7 +298,7 @@ while(Time<tMax)
   
 % step 10 second partial update of nodal velocities
   VelOld = GLOBAL.velocities;
-  GLOBAL.velocities = velocities_half + (t_np1 - t_nphalf) * GLOBAL.accelerations;
+  GLOBAL.velocities(BC.freedof) = velocities_half(BC.freedof) + (t_np1 - t_nphalf) * GLOBAL.accelerations(BC.freedof);
   
 %      |-/
 %      Update v/a of embedded nodes (if there are any)  
