@@ -119,19 +119,28 @@ end
 
 if GEOM.embedded.HostTotals(ielement,2) > 0
     search = 0;
-    for eelt = 1:GEOM.npoin
-        if GEOM.embedded.ElementHost(eelt) == ielement
-%             fprintf("Host: %u    Guest: %u\n", ielement, eelt);
-
-              T_internal = TrussCorrectedInternalForce_explicit(ielement,...
+    for eelt = 1:FEM(2).mesh.nelem
+    node_flag = [0 0];
+        if GEOM.embedded.ElementHost(eelt,1) == ielement
+            node_flag(1) = 1;
+            search = search + 1;
+        end
+        if GEOM.embedded.ElementHost(eelt,2) == ielement
+            node_flag(2) = 1;
+            search = search + 1;
+        end
+        if node_flag(1) + node_flag(2) >=1
+            
+            T_internal = TrussCorrectedInternalForce_explicit(ielement,...
                            T_internal,FEM,QUADRATURE,GEOM,GlobT_int,...
-                           PLAST,KINEMATICS,MAT,DAMPING,eelt);
+                           PLAST,KINEMATICS,MAT,DAMPING,eelt,node_flag);
                 
-              search = search + 1;
-              if search >= GEOM.embedded.HostTotals(ielement,2)
+              
+              if search >= GEOM.embedded.HostTotals(ielement,1)
                   break;
               end
         end
+
     end
 end
 %--------------------------------------------------------------------------

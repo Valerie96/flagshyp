@@ -7,16 +7,17 @@ basedir_fem='C:/Users/Valerie/Documents/GitHub/flagshyp/embeddedelt_edits/';
 % inputfile='embedded_truss_redundant_fixed.dat';
 % inputfile='explicit_wShear.dat';
 % inputfile='embedded_truss_wShear_corrected.dat';_correct
-% inputfile='embed_1h_25t.dat';
-% inputfile='embed_1h_25t.dat';_corrected_25t
-% inputfile='explicit_force.dat';
-inputfile='Force_1h_25t_correct.dat';
+inputfile='embed_1h_2t_correct_new.dat';
+% inputfile='embed_1h_2t_new.dat';
+% inputfile='embed_1h_2t_new.dat';
+% inputfile='explicit_force.dat';_corrected_25t
+% inputfile='Force_1h_25t_correct.dat';
 % inputfile='embed_1h_100t.dat';
 % inputfile = 'Flag_1h_Rate50.dat'
 
 DAMPING.b1 = 0.035; %Linear bulk viscosity damping
 DAMPING.b2 = 0; %Quadratic bulk viscosity damping
-prefactor = 0.5;%0.75;
+prefactor = 0.75;%0.75;
 outputfreq=1;
 ansmlv='y'; 
 

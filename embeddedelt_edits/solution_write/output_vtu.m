@@ -123,15 +123,19 @@ end
     fprintf(fid3,'%s%s%s%s<DataArray type="Int32" Name="offsets" format="ascii">\n',....
         space,space,space,space);
     
+    total_offset = 0;
     for nt = 1:FEM(1).n_elet_type
         for i = 1:FEM(nt).mesh.nelem
             switch FEM(nt).mesh.element_type
                 case 'quad4'
-                fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,i*FEM(nt).mesh.n_nodes_elem);  % element type = quad
+                    total_offset = total_offset + FEM(nt).mesh.n_nodes_elem;
+                    fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,total_offset);  % element type = quad
                 case 'hexa8'
-                fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,i*FEM(nt).mesh.n_nodes_elem);  % element type = hex
+                    total_offset = total_offset + FEM(nt).mesh.n_nodes_elem;    
+                    fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,total_offset);  % element type = hex
                 case 'truss2'
-                fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,10);  % element type = truss
+                    total_offset = total_offset + FEM(nt).mesh.n_nodes_elem;
+                    fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,total_offset);  % element type = truss
             end
         end
 %             fprintf(fid3,'%s%s%s%s%s%d\n',space,space,space,space,space,i*FEM(nt).mesh.n_nodes_elem);

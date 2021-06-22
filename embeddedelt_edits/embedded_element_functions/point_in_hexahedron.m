@@ -43,17 +43,22 @@ faces(:,:,11) = [x(:,5) x(:,6) x(:,7)];
 faces(:,:,12) = [x(:,7) x(:,8) x(:,5)];
 
 inside=true; 
-
+normals=zeros(3,12);
 for i=1:2:12
     A=(faces(:,2,i)-faces(:,1,i));
     B=(faces(:,3,i)-faces(:,2,i));
     n1=cross(A,B);
+    normals(:,i)=n1;
 
+    xcc=mean(faces(1,:,i)); ycc=mean(faces(2,:,i)); zcc=mean(faces(3,:,i));
+    fc(1,i)=xcc; fc(2,i)=ycc; fc(3,i)=zcc;
+    xcc=mean(faces(1,:,i+1)); ycc=mean(faces(2,:,i+1)); zcc=mean(faces(3,:,i+1));
+    fc(1,i+1)=xcc; fc(2,i+1)=ycc; fc(3,i+1)=zcc;
     
     A=(faces(:,2,i+1)-faces(:,1,i+1));
     B=(faces(:,3,i+1)-faces(:,2,i+1));
     n2=cross(A,B);
-
+    normals(:,i+1)=n2;
 
     %Find n*(p-n1)
     d1=(p'-faces(:,1,i));
@@ -64,9 +69,35 @@ for i=1:2:12
 %     above2 = above2/(norm(d2)*norm(n2));
     if (above1>1E-10 && above2>1E-10)
         inside=false; 
-        break;
+%         break;
     end
 end
+
+%     X=[faces(1,:,1);faces(1,:,2);faces(1,:,3);faces(1,:,4);faces(1,:,5);faces(1,:,6)]'; 
+%     Y=[faces(2,:,1);faces(2,:,2);faces(2,:,3);faces(2,:,4);faces(2,:,5);faces(2,:,6)]';
+%     Z=[faces(3,:,1);faces(3,:,2);faces(3,:,3);faces(3,:,4);faces(3,:,5);faces(3,:,6)]';
+%     
+%     XX=[faces(1,:,1);faces(1,:,2);faces(1,:,3);faces(1,:,4);faces(1,:,5);faces(1,:,6)]'; 
+%     YY=[faces(2,:,1);faces(2,:,2);faces(2,:,3);faces(2,:,4);faces(2,:,5);faces(2,:,6)]';
+%     ZZ=[faces(3,:,1);faces(3,:,2);faces(3,:,3);faces(3,:,4);faces(3,:,5);faces(3,:,6)]';
+%     figure(); hold on; view(3); grid on;
+%     patch(X,Y,Z,'blue','FaceAlpha', 0.2);
+%     patch(XX,YY,ZZ,'red','FaceAlpha', 0.2);
+%     plot3(p(1),p(2),p(3),'r.');
+% 
+%     xc=mean(x(1,:)); yc=mean(x(2,:)); zc=mean(x(3,:));
+%     plot3(xc,yc,zc, 'ko');
+%     for i=1:12
+%         plot3([(normals(1,i)+fc(1,i)) fc(1,i)],[(normals(2,i)+fc(2,i)) fc(2,i)],[(normals(3,i)+fc(3,i)) fc(3,i)], 'g');
+%     end
+%     for i=1:12
+%     plot3([faces(1,:,i) faces(1,1,i)],[faces(2,:,i) faces(2,1,i)],[faces(3,:,i) faces(3,1,i)],'k-','LineWidth',1);
+%     end
+%     ylim([-0.1 2.01]);
+%     xlabel('x');
+%     ylabel('y');
+%     zlabel('z');
+%     hold off;
 end
     
 

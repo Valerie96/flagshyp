@@ -4,7 +4,7 @@
 
 function [T_internal] = TrussCorrectedInternalForce_explicit(ielement,...
           T_internal,FEM,QUADRATURE,GEOM,GlobT_int,...
-          PLAST,KINEMATICS,MAT,DAMPING,eelt)
+          PLAST,KINEMATICS,MAT,DAMPING,eelt,node_flag)
 
 
 global explicit
@@ -26,6 +26,16 @@ global VolumeCorrect;
     matyp_e           = MAT(2).matyp(material_number);        
     properties_e      = MAT(2).props(:,material_number);
     Ve_e              = GEOM.Ve(eelt);  
+    
+    %Get host element nodes
+    h_connectivity = FEM(1).mesh.connectivity(:,ielement);
+    x_h = GEOM.x0(:,h_connectivity);  %Host node global coordinates
+    
+    %Get embedded element information
+    e_connectivity = FEM(2).mesh.connectivity(:,eelt);
+    x_e = GEOM.x0(:,e_connectivity);
+    xelocal  = GEOM.x(:,e_connectivity);                     
+    e_nodes_zeta = GEOM.embedded.Embed_Zeta(:,e_connectivity);
     
     
     switch matyp_h
@@ -52,6 +62,12 @@ global VolumeCorrect;
     % material properties)
     %--------------------------------------------------------------------------    
     %Assuming both elements are neo hookean materials
+    lam_h=properties_h(3);
+    mu_h=properties_h(2);
+    K_h=lam_h+(2*mu_h/3);
+    nu_h   = (3*K_h-2*mu_h)/(2*(3*K_h+mu_h));
+    E_h    = 9*K_h*mu_h/(3*K_h+mu_h);
+    
     properties_eh = properties_e; %eh is the same as e, except that nu and E are replaced bu nu and E of the host element
     properties_eh(1) = properties_h(1);
     properties_eh(2) = E_h;
@@ -69,15 +85,18 @@ global VolumeCorrect;
     Tint_e = GlobT_int(edof);
     N_node1 = shape_function_values_at(e_nodes_zeta(:,1), FEM(1).mesh.element_type);
     N_node2 = shape_function_values_at(e_nodes_zeta(:,2), FEM(1).mesh.element_type);
-
+    
     %Force from embedded nodes distribted over host nodes
+    %Node flag indicates which nodes are actually inside the host for the
+    %case where one truss element could span multiple hosts (1 for in, 0
+    %for out)
     T_e1 = zeros(GEOM.ndime*8, 1);
     T_e2 = zeros(GEOM.ndime*8, 1);
     for i = 1:3:24
        T_e1(i:i+2) = Tint_e(:,1)*N_node1((i-1)/3 + 1); 
        T_e2(i:i+2) = Tint_e(:,2)*N_node2((i-1)/3 + 1); 
     end
-    T_e = T_e1 + T_e2;
+    T_e = T_e1*node_flag(1) + T_e2*node_flag(2);
 
 
    %Do the same for the correction force
@@ -87,7 +106,7 @@ global VolumeCorrect;
        T_C1(i:i+2) = TC(1:3)*N_node1((i-1)/3 + 1); 
        T_C2(i:i+2) = TC(4:6)*N_node2((i-1)/3 + 1); 
     end
-    T_C = T_C1 + T_C2;
+    T_C = T_C1*node_flag(1) + T_C2*node_flag(2);
 
     %----------------------------------------------------------------------
     % Compute equivilant (internal) force vector of the host element.

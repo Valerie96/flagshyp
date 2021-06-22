@@ -1,17 +1,16 @@
-%% Flagshyp 1 vs Flagshyp 2 vs Flagshyp 3 Energy
 clear; close all; clc;
 
 file1="explicit_3D";
 name1 = "Flagshyp No Truss";
 
-file2="embedded_2truss";
-name2 = "Flagshyp Uncorrected";
+file2="embed_1h_2t";
+name2 = "Flagshyp Original";
 
-file3="embedded_2truss_corrected";
-name3 = "Flagshyp Corrected";
+file3="embed_1h_2t_new";
+name3 = "Flagshyp MultiHostFunction";
 
-FLAG_1 = ReadFlagshypOutputFile(file1,'jf', 83,1); 
-FLAG_2 = ReadFlagshypOutputFile(file2,'jf', 82,1);
+FLAG_1 = ReadFlagshypOutputFile(file1,'jf', 614,1); 
+FLAG_2 = ReadFlagshypOutputFile(file2,'jf', 124,1);
 FLAG_3 = ReadFlagshypOutputFile(file3,'jf', 83,1);
 
 PlotEnergy3([FLAG_1.Etime, FLAG_1.KE], [FLAG_2.Etime, FLAG_2.KE],[FLAG_3.Etime, FLAG_3.KE], name1, name2,name3,'Kinetic Energy')
@@ -19,6 +18,24 @@ PlotEnergy3([FLAG_1.Etime, FLAG_1.IE], [FLAG_2.Etime, FLAG_2.IE],[FLAG_3.Etime, 
 PlotEnergy3([FLAG_1.Etime, FLAG_1.WK], [FLAG_2.Etime, FLAG_2.WK],[FLAG_3.Etime, FLAG_3.WK], name1, name2,name3,'External Work')
 PlotEnergy3([FLAG_1.Etime, FLAG_1.ET], [FLAG_2.Etime, FLAG_2.ET],[FLAG_3.Etime, FLAG_3.ET], name1, name2,name3,'Total Energy')
 
+%%
+file1="explicit_3D";
+name1 = "Flagshyp No Truss";
+
+file2="embed_1h_2t_correct";
+name2 = "Flagshyp Original";
+
+file3="embed_1h_2t_correct_new";
+name3 = "Flagshyp MultiHostFunction";
+
+FLAG_1 = ReadFlagshypOutputFile(file1,'jf', 614,1); 
+FLAG_2 = ReadFlagshypOutputFile(file2,'jf', 614,1);
+FLAG_3 = ReadFlagshypOutputFile(file3,'jf', 83,1);
+
+PlotEnergy3([FLAG_1.Etime, FLAG_1.KE], [FLAG_2.Etime, FLAG_2.KE],[FLAG_3.Etime, FLAG_3.KE], name1, name2,name3,'Kinetic Energy')
+PlotEnergy3([FLAG_1.Etime, FLAG_1.IE], [FLAG_2.Etime, FLAG_2.IE],[FLAG_3.Etime, FLAG_3.IE], name1, name2,name3,'Internal Energy')
+PlotEnergy3([FLAG_1.Etime, FLAG_1.WK], [FLAG_2.Etime, FLAG_2.WK],[FLAG_3.Etime, FLAG_3.WK], name1, name2,name3,'External Work')
+PlotEnergy3([FLAG_1.Etime, FLAG_1.ET], [FLAG_2.Etime, FLAG_2.ET],[FLAG_3.Etime, FLAG_3.ET], name1, name2,name3,'Total Energy')
 %% Flagshyp 1 vs Flagshyp 2 vs Flagshyp 3: Field Output
 
 figure();
@@ -120,79 +137,6 @@ title("Y Reaction Force");
 xlabel("Time (s)");
 ylabel("Reaction Force (N)");
 legend('show');
-
-
-%% Abaqus vs Embedded Abaqus vs   Flagshyp 1 vs Flagshyp 2 vs Flagshyp 3 Energy
-
-% AbqOneHost = ReadHost2("Ab_1h_Rate5");
-% [AbqEHost, AbqETruss, AbqE] = ReadHostTruss2('Ab_1h_2t');
-
-[AbqEHost, AbqETruss, AbqE] = ReadHostTruss('OneHostTwoTrussResults');
-AbqOneHost = ReadHost3('Ab_1h_OG');
-
-graphsize=[100 100 800 400];
-name1a = "Abaqus Solid";
-name2a = "Abaqus Embedded";
-
-file1="explicit_3D_04";
-name1 = "Flagshyp No Truss";
-
-file2="embedded_2truss";
-name2 = "Flagshyp Uncorrected";
-
-file3="embedded_2truss_corrected";
-name3 = "Flagshyp Corrected";
-
-FLAG_1 = ReadFlagshypOutputFile(file1,'jf', 83,1); 
-FLAG_2 = ReadFlagshypOutputFile(file2,'jf', 82,1);
-FLAG_3 = ReadFlagshypOutputFile(file3,'jf', 83,1);
-
-PlotEnergy5([AbqOneHost.time, AbqOneHost.KE],[AbqEHost.time, AbqE.KE], [FLAG_1.Etime, FLAG_1.KE], [FLAG_2.Etime, FLAG_2.KE],[FLAG_3.Etime, FLAG_3.KE], name1a, name2a,name1, name2,name3,'Kinetic Energy')
-PlotEnergy5([AbqOneHost.time, AbqOneHost.IE],[AbqEHost.time, AbqE.IE], [FLAG_1.Etime, FLAG_1.IE], [FLAG_2.Etime, FLAG_2.IE],[FLAG_3.Etime, FLAG_3.IE], name1a, name2a,name1, name2,name3,'Internal Energy')
-PlotEnergy5([AbqOneHost.time, -AbqOneHost.WK],[AbqEHost.time, -AbqE.WK],[FLAG_1.Etime, FLAG_1.WK], [FLAG_2.Etime, FLAG_2.WK],[FLAG_3.Etime, FLAG_3.WK],  name1a, name2a,name1, name2,name3,'External Work')
-PlotEnergy5([AbqOneHost.time, AbqOneHost.ETOTAL],[AbqEHost.time, AbqE.ETOTAL], [FLAG_1.Etime, FLAG_1.ET], [FLAG_2.Etime, FLAG_2.ET],[FLAG_3.Etime, FLAG_3.ET], name1a, name2a,name1, name2,name3,'Total Energy')
-
-
-figure();
-hold on; grid on;
-% fig=gcf; fig.Position=graphsize;
-plot(AbqOneHost.time,AbqOneHost.Force,'bo','DisplayName',name1a);
-plot(AbqEHost.time,AbqEHost.Force,'ro' ,'DisplayName',name2a);
-plot(FLAG_1.time,FLAG_1.RF(:,2,1),'b','DisplayName',name1,'LineWidth',3);
-plot(FLAG_2.time,FLAG_2.RF(:,2,1),'r','DisplayName',name2,'LineWidth',3);
-plot(FLAG_3.time,FLAG_3.RF(:,2,1),'g','DisplayName',name3,'LineWidth',2);
-title("External Reaction Force");
-xlabel("Time (s)");
-ylabel("Force (N)");
-legend('show');
-
-figure();
-hold on; grid on;
-% fig=gcf; fig.Position=graphsize;
-plot(AbqOneHost.time,AbqOneHost.Stress(:,1),'bo','DisplayName',name1a);
-plot(AbqEHost.time,AbqEHost.Stress(:,1),'ro' ,'DisplayName',name2a);
-plot(FLAG_1.time,FLAG_1.HostS(:,1,1),'b','DisplayName',name1,'LineWidth',3);
-plot(FLAG_2.time,FLAG_2.HostS(:,1,1),'r','DisplayName',name2,'LineWidth',3);
-plot(FLAG_3.time,FLAG_3.HostS(:,1,1),'g','DisplayName',name3,'LineWidth',2);
-title("Host XX Stress");
-xlabel("Time (s)");
-ylabel("Stress (Pa)");
-legend('show');
-
-figure();
-hold on; grid on;
-% fig=gcf; fig.Position=graphsize;
-plot(AbqOneHost.time,AbqOneHost.Displacement(:,2),'bo','DisplayName',name1a);
-plot(AbqEHost.time,AbqEHost.Displacement(:,2),'ro' ,'DisplayName',name2a);
-plot(FLAG_1.time,FLAG_1.Disp(:,2,1),'b','DisplayName',name1,'LineWidth',3);
-plot(FLAG_2.time,FLAG_2.Disp(:,2,1),'r','DisplayName',name2,'LineWidth',3);
-plot(FLAG_3.time,FLAG_3.Disp(:,2,1),'g','DisplayName',name3,'LineWidth',2);
-title("X Displacement");
-xlabel("Time (s)");
-ylabel("Displacement (m) ");
-legend('show');
-
-%% Function Defs
 
 function PlotEnergy(Data1, Data2, Name1, Name2,Title)
     figure();

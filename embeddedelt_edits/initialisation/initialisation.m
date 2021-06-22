@@ -70,8 +70,6 @@ GLOBAL.Reactions     = zeros(mesh_dof,1);
 
 % Define velocity and accelerations for explicit method;
 if (explicit == 1)
-   % GLOBAL.velocities = zeros(GEOM.npoin,GEOM.ndime);
-   % GLOBAL.accelerations = zeros(GEOM.npoin,GEOM.ndime);
     GLOBAL.velocities = zeros(mesh_dof,1);
     GLOBAL.accelerations = zeros(mesh_dof,1);
     GEOM.Jn_1 = ones(mesh_dof,1);
@@ -102,14 +100,8 @@ end
 % residual vector due to the internal contributions 
 % (external contributions will be added later on). 
 %-------------------------------------------------------------------------- 
-
-
-                                             
-                                             
+                                       
 if(explicit == 1)
-    %For now, assume no initial internal forces
-%     [GLOBAL,PLAST] = residual_assembly_explicit(CON.xlamb,GEOM,MAT,FEM,GLOBAL,...
-%                                                  CONSTANT,QUADRATURE.element,PLAST,KINEMATICS); 
     GLOBAL.external_load = CON.xlamb*GLOBAL.nominal_external_load;
     GLOBAL.T_int     = zeros(FEM(1).mesh.n_dofs,1);
     GLOBAL.Residual = GLOBAL.T_int - GLOBAL.external_load;

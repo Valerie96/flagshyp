@@ -13,12 +13,11 @@ function GEOM = inverse_mapping(GEOM,FEM,tienodes)
     e_nodes = tienodes(:);
     h_elts=FEM(1).mesh.host; 
     e_elts=FEM(2).mesh.embedded;
-    Global_nums = 1:GEOM.total_n_elets;
 
 
 
     NodeHost = zeros(GEOM.npoin,1);
-    ElementHost = zeros(GEOM.total_n_elets,8);
+    ElementHost = zeros(GEOM.total_n_elets,4);
     HostTotals = zeros(GEOM.total_n_elets,2);
     Zeta = zeros(3,GEOM.npoin);
     
@@ -49,14 +48,39 @@ function GEOM = inverse_mapping(GEOM,FEM,tienodes)
         end    
     end
 
-    %Assign hosts to embedded elements based on first node
+    %Assign hosts to embedded elements
     for i=1:length(e_elts)
         e = e_elts(i); 
         e_connectivity = FEM(2).mesh.connectivity(:,e);
         n1 = e_connectivity(1); %Choose first node
-        host = NodeHost(n1);
-        ElementHost(e,:) = host;
-        HostTotals(host,2) = HostTotals(host,2) + 1;
+        host1 = NodeHost(n1);
+        ElementHost(e,1) = host1;
+        n2 = e_connectivity(2); %Choose second node
+        host2 = NodeHost(n2);
+        ElementHost(e,2) = host2;
+        
+        if host1==host2
+            HostTotals(host1,2) = HostTotals(host1,2) + 1;
+            ElementHost(e,3) = 0.5;
+            ElementHost(e,4) = 0.5;            
+        else
+            p = find_intersection(GEOM,FEM,e_connectivity,host1,host2);
+            
+            %Persentage of truss in each host
+            %truss vector
+                truss = GEOM.x0(:,e_connectivity(2)) - GEOM.x0(:,e_connectivity(1));
+            %vector from p to truss node 1
+                truss_h1 = p - GEOM.x0(:,e_connectivity(1));
+            %percent of total host length between point p and node 1
+                percent1 = norm(truss_h1)/norm(truss);
+            ElementHost(e,3) = percent1;
+            ElementHost(e,4) = 1-percent1;
+            
+            HostTotals(host1,2) = HostTotals(host1,2) + 1;
+            HostTotals(host2,2) = HostTotals(host2,2) + 1;
+            
+        end
+
     end
 
     GEOM.embedded.NodeHost = NodeHost;
